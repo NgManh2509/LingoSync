@@ -30,7 +30,7 @@ def transcribeAudio(audio_path: str, initial_prompt: str):
 
         if os.path.exists(audio_path):
             os.remove(audio_path)
-        return {"status": "success", "data": output_data}
+        return {"status": "success", "data": output_data, "language": info.language}
     except Exception as e:
         print(f"[WhisperService] Lỗi transcribe: {type(e).__name__}: {e}")
         return {"status": "error", "message": str(e)}

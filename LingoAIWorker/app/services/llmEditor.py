@@ -51,4 +51,4 @@ def cleanTranscript(rawTranscript, videoTitle, videoTags):
         return json.loads(response.text)
     except Exception as e:
         print(f"Lỗi xử lý {e}")
-        return rawTranscriptStr
+        return rawTranscript  # Trả về list gốc thay vì string

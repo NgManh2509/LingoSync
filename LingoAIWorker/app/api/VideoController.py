@@ -3,6 +3,7 @@ from app.models.video import VideoSubtitle
 from app.services.YoutubeService import getYoutubeSubtitle, downloadAudio
 from app.services.WhisperService import transcribeAudio
 from app.services.llmEditor import cleanTranscript
+from app.services.TranslateService import translateAll
 
 router = APIRouter()
 
@@ -10,7 +11,12 @@ router = APIRouter()
 async def getSub(req: VideoSubtitle):
     yt_res = getYoutubeSubtitle(req.url, req.lang)
     if yt_res["status"] == "success":
-        return {"source": "youtube_native", "data": yt_res["data"]}
+        translated_res = translateAll(
+            data=yt_res["data"],
+            src_lang=req.lang,      # YouTube sub đã biết ngôn ngữ từ req.lang
+            tgt_lang=req.tgt_lang
+        )
+        return {"source": "youtube_native", "data": translated_res}
 
     audio_res = downloadAudio(req.url)
     if audio_res["status"] != "success":
@@ -23,6 +29,11 @@ async def getSub(req: VideoSubtitle):
     model_res = transcribeAudio(audio_res["file_path"], whisper_prompt)
     if model_res["status"] == "success":
         clean_res = cleanTranscript(model_res["data"], video_title, video_tags)
-        return {"source": "cleaned_whisper", "data": clean_res}
+        translated_res = translateAll(
+            data=clean_res,
+            src_lang=model_res["language"], 
+            tgt_lang=req.tgt_lang            
+        )
+        return {"source": "cleaned_whisper", "data": translated_res}
     else:
         raise HTTPException(status_code=500, detail="Lỗi trong quá trình AI xử lý âm thanh.")
