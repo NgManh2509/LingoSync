@@ -35,7 +35,7 @@ def getYoutubeSubtitle(url: str, lang: str = "en"):
                 clean_text = re.sub(r'<[^>]+>', '', text_raw).strip()
                 clean_text = clean_text.replace("\n", " ")
                 json_data.append({
-                    "time": time_str[:8],  # Bỏ milliseconds, chỉ giữ hh:mm:ss
+                    "time": time_str[:8],
                     "text": clean_text
                 })
             os.remove(filename)

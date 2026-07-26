@@ -13,7 +13,7 @@ WHISPER_TO_NLLB = {
     "vi": "vie_Latn",   # Tiếng Việt
     "ja": "jpn_Jpan",   # Tiếng Nhật
     "ko": "kor_Hang",   # Tiếng Hàn
-    "zh": "zho_Hans",   # Tiếng Trung (Giản thể - Mặc định cho Whisper 'zh')
+    "zh": "zho_Hans",   # Tiếng Trung (Giản thể)
     "yue": "yue_Hant",  # Tiếng Quảng Đông (Phồn thể)
     "fr": "fra_Latn",   # Tiếng Pháp
     "de": "deu_Latn",   # Tiếng Đức
@@ -41,7 +41,7 @@ WHISPER_TO_NLLB = {
     "sl": "slv_Latn",   # Tiếng Slovenia
     "bs": "bos_Latn",   # Tiếng Bosnia
     "mk": "mkd_Cyrl",   # Tiếng Macedonia
-    "sq": "als_Latn",   # Tiếng Albania (NLLB dùng als_Latn cho Tosk Albanian)
+    "sq": "als_Latn",   # Tiếng Albania 
     "lt": "lit_Latn",   # Tiếng Litva
     "lv": "lav_Latn",   # Tiếng Latvia
     "et": "est_Latn",   # Tiếng Estonia
