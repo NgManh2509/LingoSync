@@ -85,7 +85,6 @@ CREATE TABLE subtitles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     video_id UUID REFERENCES videos(id) ON DELETE CASCADE,
     start_time FLOAT,
-    end_time FLOAT,
     original_text TEXT,
     translated_text TEXT,
     sequence_order INT

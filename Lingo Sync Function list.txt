@@ -1,0 +1,60 @@
+Lingo Sync Function list
+Đăng ký đăng nhập
+
+Phần listening:
+- Nhập url youtube để lấy phụ đề hoặc audio được chuyển thành text ( nếu video không có phụ đề )
+- Text của phụ đề/audio được dịch sang targeted language
+- Nghe được cách phát âm của cả câu
+- Nghe được cách phát âm của từng từ trong cả câu (click vào từ đó )
+- lưu từ vào phần review để ôn lại khi cần
+- Có thể phát triển ( shadowing )
+
+Phần ôn tập: 
+- Có thể ôn tập qua flash card 
+- Bài tập điền từ: lấy câu từ trong video gốc rồi đục lỗ 
+- Duy trì streak, thanh kinh nghiệm, vượt qua các thành tựu
+- Có thể xem lại các video đã học  
+
+Quản lý & Dashboard 
+- Thống kê học tập: Các biểu đồ, số từ vựng đã học trong tuần/tháng
+- Phân loại video, lập playlist 
+
+
+
+Schedule:
+
+Phase 1: Nền móng & Giao diện (Tuần 1 - 2)
+Thiết kế UI/UX: Lên layout trên Figma cho màn hình xem video, bảng Interactive Subtitles và Flashcard.
+
+Init Frontend: Setup ReactJS, cấu hình Tailwind CSS, dựng các component cơ bản.
+
+Init Core Backend: Setup Spring Boot, thiết kế SQL Schema (bảng Users, Videos, Vocabulary, Flashcards, Decks), làm tính năng Authentication cơ bản.
+
+Phase 2: Core Logic & AI Worker (Tuần 3 - 4)
+Xây dựng AI Worker (FastAPI): Viết các script Python để nhận link YouTube, tải luồng audio tạm thời. Các tác vụ convert và xử lý file media bằng Python sẽ không mất quá nhiều thời gian để triển khai.
+
+Tích hợp AI: Cài đặt và đưa faster-whisper cùng NLLB vào chạy thử nghiệm. Trả về file JSON chứa timestamps chuẩn hóa.
+
+Kết nối Backend: Mở API trên Spring Boot để nhận kết quả từ FastAPI và lưu vào Database.
+
+Phase 3: Đồng bộ Video & Subtitle (Tuần 5 - 6)
+Frontend Player: Tích hợp YouTube Iframe API (react-youtube).
+
+Tokenization & Highlight: Xử lý logic chặt câu thành các từ (token) trên React, bắt sự kiện click.
+
+Tích hợp Từ điển: Gọi API từ điển bên thứ 3, render Tooltip hiện nghĩa, phiên âm và nút lưu vào Flashcard. Đây là phần cần tinh chỉnh nhiều để UI không bị giật hay tràn khung.
+
+Phase 4: Flashcard & Hoàn thiện (Tuần 7 - 8)
+Thuật toán Spaced Repetition: Viết logic trên Spring Boot tính toán ngày ôn tập tiếp theo (Next Review Date) cho từng từ vựng.
+
+Giao diện Ôn tập: Dựng màn hình lật Flashcard, ghi nhận kết quả (Nhớ/Quên) bắn về Backend.
+
+Testing & Tối ưu: Xử lý các lỗi bất đồng bộ, tối ưu tốc độ load, dọn dẹp code.
+
+Khối lượng công việc này khá lớn và đòi hỏi sự phân bổ hợp lý, nhất là với lịch trình bận rộn của đồ án năm cuối đại học cùng các ca dạy gia sư tại nhà. Quỹ thời gian có thể bị chia nhỏ trong ngày, nên việc chia dự án thành các Phase dứt điểm như trên sẽ giúp bạn theo dõi tiến độ tốt hơn mà không bị ngợp.
+
+
+TechStack
+- Backend: Spring Boot
+- Frontend: React, TailwindCSS
+- AI: faster-whisper, NLLB, GeminiAPI
