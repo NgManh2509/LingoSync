@@ -26,11 +26,11 @@ public class Users {
     @Column(name = "email", nullable = false, unique = true)
     private String email;
 
-    @Column(name = "username", nullable = false, unique = true, length = 100)
-    private String username;
+    @Column(name = "google_id", unique = true)
+    private String googleId;
 
-    @Column(name = "password_hash", nullable = false)
-    private String passwordHash;
+    @Column(name = "username", nullable = true, unique = true, length = 100)
+    private String username;
 
     @Column(name = "avatar_url", columnDefinition = "TEXT")
     private String avatarUrl;
