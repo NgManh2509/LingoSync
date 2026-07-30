@@ -1,9 +1,9 @@
 package com.lingosync.lingo_backend.service;
 
-import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
-import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
-import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
 
 import com.lingosync.lingo_backend.entity.Users;
@@ -13,30 +13,35 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class OAuth2UserService extends DefaultOAuth2UserService {
+public class OAuth2UserService extends OidcUserService {
 
     private final UserRepository userRepository;
 
     @Override
-    public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
-        OAuth2User oAuth2User = super.loadUser(userRequest);
-        String email = oAuth2User.getAttribute("email");
-        String name = oAuth2User.getAttribute("name");
-        String avatarUrl = oAuth2User.getAttribute("picture");
-        String googleId = oAuth2User.getAttribute("sub");
+    public OidcUser loadUser(OidcUserRequest userRequest) throws OAuth2AuthenticationException {
+        OidcUser oidcUser = super.loadUser(userRequest);
+        String email = oidcUser.getAttribute("email");
+        String name = oidcUser.getAttribute("name");
+        String avatarUrl = oidcUser.getAttribute("picture");
+        String googleId = oidcUser.getAttribute("sub");
 
+        if (googleId == null) {
+            googleId = oidcUser.getName();
+        }
+
+        final String finalGoogleId = googleId;
         userRepository.findByEmail(email).orElseGet(() -> {
-            String uniqueUsername = name + "_" + googleId.substring(0, 6);
+            String uniqueUsername = name.replaceAll("\\s+", "") + "_" + finalGoogleId.substring(0, Math.min(6, finalGoogleId.length()));
             Users newUser = Users.builder()
                     .email(email)
                     .username(uniqueUsername)
                     .avatarUrl(avatarUrl)
-                    .googleId(googleId)
+                    .googleId(finalGoogleId)
                     .build();
             return userRepository.save(newUser);
         });
 
-        return oAuth2User;
+        return oidcUser;
     }
 
 }
