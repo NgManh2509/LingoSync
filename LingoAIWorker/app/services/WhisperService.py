@@ -21,7 +21,6 @@ def _get_model():
 
 
 def unload_model():
-    """Giải phóng Whisper khỏi VRAM để Ollama có thể dùng CUDA sau đó."""
     global _model
     if _model is not None:
         del _model

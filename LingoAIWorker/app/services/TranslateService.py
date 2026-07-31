@@ -3,10 +3,15 @@ import torch
 
 model_name = "facebook/nllb-200-distilled-1.3B"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+
+model = AutoModelForSeq2SeqLM.from_pretrained(
+    model_name,
+    dtype=torch.float16,
+    device_map="auto"
+)
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-model.to(device)
+
 
 WHISPER_TO_NLLB = {
     "en": "eng_Latn",   # Tiếng Anh

@@ -10,6 +10,7 @@ router = APIRouter()
 @router.post("/get_subtitles")
 async def getSub(req: VideoSubtitle):
     yt_res = getYoutubeSubtitle(req.url, req.lang)
+    unload_model()
     if yt_res["status"] == "success":
         translated_res = translateAll(
             data=yt_res["data"],
