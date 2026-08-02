@@ -2,15 +2,13 @@ package com.lingosync.lingo_backend.config;
 
 import com.lingosync.lingo_backend.repository.UserRepository;
 import com.lingosync.lingo_backend.service.JwtService;
-import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -25,6 +23,9 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
     private final JwtService jwtService;
     private final UserRepository userRepository;
+
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
@@ -47,14 +48,14 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
             response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
             try {
                 System.out.println("Redirecting to frontend...");
-                response.sendRedirect("http://localhost:5173");
+                response.sendRedirect(frontendUrl);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }, () -> {
             System.out.println("CRITICAL ERROR: User not found in DB for email " + email);
             try {
-                response.sendRedirect("http://localhost:5173?error=user_not_found");
+                response.sendRedirect(frontendUrl + "?error=user_not_found");
             } catch (IOException e) {
                 e.printStackTrace();
             }

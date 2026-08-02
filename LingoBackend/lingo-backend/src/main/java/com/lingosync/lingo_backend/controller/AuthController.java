@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.lingosync.lingo_backend.dto.UserResponse;
 import com.lingosync.lingo_backend.entity.Users;
 
 @RestController
@@ -14,11 +15,10 @@ import com.lingosync.lingo_backend.entity.Users;
 public class AuthController {
 
     @GetMapping("/me")
-    public ResponseEntity<Users> getCurrentUser() {
+    public ResponseEntity<UserResponse> getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof Users) {
-            Users user = (Users) authentication.getPrincipal();
-            return ResponseEntity.ok(user);
+        if (authentication != null && authentication.getPrincipal() instanceof Users user) {
+            return ResponseEntity.ok(UserResponse.from(user));
         }
         return ResponseEntity.status(401).build();
     }
