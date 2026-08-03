@@ -3,7 +3,7 @@ from app.models.video import VideoSubtitle
 from app.services.YoutubeService import getYoutubeSubtitle, downloadAudio
 from app.services.WhisperService import transcribeAudio, unload_model
 from app.services.llmEditor import cleanTranscript
-from app.services.TranslateService import translateAll
+from app.services.TranslateService import translateUsingGoogle
 
 router = APIRouter()
 
@@ -12,7 +12,7 @@ async def getSub(req: VideoSubtitle):
     yt_res = getYoutubeSubtitle(req.url, req.lang)
     unload_model()
     if yt_res["status"] == "success":
-        translated_res = translateAll(
+        translated_res = translateUsingGoogle(
             data=yt_res["data"],
             src_lang=req.lang,
             tgt_lang=req.tgt_lang
@@ -32,7 +32,7 @@ async def getSub(req: VideoSubtitle):
         raise HTTPException(status_code=500, detail="Lỗi trong quá trình AI xử lý âm thanh.")
     cleaned = cleanTranscript(model_res["data"], video_title, video_tags)
 
-    translated = translateAll(
+    translated = translateUsingGoogle(
         data=cleaned,
         src_lang=model_res["language"],
         tgt_lang=req.tgt_lang

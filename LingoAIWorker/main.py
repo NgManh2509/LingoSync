@@ -14,3 +14,6 @@ async def root():
     return {"status": "success",
             "message": "LingoSync AI Worker đang chạy ngon lành!"
     }
+
+
+#chạy : uvicorn main:app --reload

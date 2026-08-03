@@ -1,17 +1,25 @@
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import torch
+import logging
+from deep_translator import GoogleTranslator
 
-model_name = "facebook/nllb-200-distilled-1.3B"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-
-model = AutoModelForSeq2SeqLM.from_pretrained(
-    model_name,
-    dtype=torch.float16,
-    device_map="auto"
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%H:%M:%S"
 )
+logger = logging.getLogger(__name__)
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
-
+# model_name = "facebook/nllb-200-distilled-1.3B"
+# tokenizer = AutoTokenizer.from_pretrained(model_name)
+#
+# model = AutoModelForSeq2SeqLM.from_pretrained(
+#     model_name,
+#     dtype=torch.float16,
+#     device_map="auto"
+# )
+#
+# device = "cuda" if torch.cuda.is_available() else "cpu"
 
 WHISPER_TO_NLLB = {
     "en": "eng_Latn",   # Tiếng Anh
@@ -124,24 +132,40 @@ WHISPER_TO_NLLB = {
 def get_nllb_lang_code(whisper_lang_code, default_lang="eng_Latn"):
     return WHISPER_TO_NLLB.get(whisper_lang_code, default_lang)
 
-def translate(text, src_lang="auto", tgt_lang="auto"):
-    tokenizer.src_lang = src_lang
-    inputs = tokenizer(text, return_tensors="pt").to(device)
-    forced_bos_token_id = tokenizer.convert_tokens_to_ids(tgt_lang)
+# def translate(text, src_lang="auto", tgt_lang="auto"):
+#     tokenizer.src_lang = src_lang
+#     inputs = tokenizer(text, return_tensors="pt").to(device)
+#     forced_bos_token_id = tokenizer.convert_tokens_to_ids(tgt_lang)
+#
+#     generated_tokens = model.generate(
+#         **inputs,
+#         forced_bos_token_id=forced_bos_token_id,
+#         max_length=100
+#     )
+#     return tokenizer.batch_decode(generated_tokens, skip_special_tokens=True)[0]
+#
+# def translateAll(data, src_lang="en", tgt_lang="vi"):
+#     nllb_src = get_nllb_lang_code(src_lang)
+#     nllb_tgt = get_nllb_lang_code(tgt_lang)
+#
+#     for item in data:
+#         original_text = item["text"]
+#         item["translated"] = translate(original_text, nllb_src, nllb_tgt)
+#
+#     return data
+#
 
-    generated_tokens = model.generate(
-        **inputs,
-        forced_bos_token_id=forced_bos_token_id,
-        max_length=100
-    )
-    return tokenizer.batch_decode(generated_tokens, skip_special_tokens=True)[0]
+def translateUsingGoogle(data, src_lang="en", tgt_lang="vi"):
+    try:
+        google_translator = GoogleTranslator(source=src_lang, target=tgt_lang)
+        total = len(data)
+        logger.info(f"Bắt đầu dịch: tổng {total} dòng ({src_lang} → {tgt_lang})")
 
-def translateAll(data, src_lang="en", tgt_lang="vi"):
-    nllb_src = get_nllb_lang_code(src_lang)
-    nllb_tgt = get_nllb_lang_code(tgt_lang)
+        for i, item in enumerate(data, start=1):
+            item["translated"] = google_translator.translate(item["text"])
+            logger.info(f"  [{i}/{total}] {item['text'][:40]!r} → {item['translated'][:40]!r}")
 
-    for item in data:
-        original_text = item["text"]
-        item["translated"] = translate(original_text, nllb_src, nllb_tgt)
-
-    return data
+        logger.info(f"Dịch xong {total} dòng.")
+        return data
+    except Exception as e:
+        raise RuntimeError(f"Translation failed: {e}")
