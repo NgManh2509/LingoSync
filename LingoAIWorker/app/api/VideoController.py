@@ -24,13 +24,14 @@ async def getSub(req: VideoSubtitle):
 
     video_title = audio_res.get("initial_prompt", "")
     video_tags  = audio_res.get("tags", "")
+    video_channel = audio_res.get("channel", "")
     whisper_prompt = f"{video_title}. {video_tags}".strip(". ")
     model_res = transcribeAudio(audio_res["file_path"], whisper_prompt)
     unload_model()
 
     if model_res["status"] != "success":
         raise HTTPException(status_code=500, detail="Lỗi trong quá trình AI xử lý âm thanh.")
-    cleaned = cleanTranscript(model_res["data"], video_title, video_tags)
+    cleaned = cleanTranscript(model_res["data"], video_title, video_tags, video_channel)
 
     translated = translateUsingGoogle(
         data=cleaned,

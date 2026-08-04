@@ -65,13 +65,15 @@ def downloadAudio(url: str):
             video_id = info["id"]
             title = info.get("title", "")
             tags = info.get("tags") or []
-            tags_str = ", ".join(tags[:20])  
+            tags_str = ", ".join(tags[:20])
+            channel = info.get("uploader") or info.get("channel") or ""
 
             return {
                 "status": "success",
                 "file_path": f"{video_id}.mp3",
                 "initial_prompt": title,
-                "tags": tags_str
+                "tags": tags_str,
+                "channel": channel
             }
     except Exception as e:
         return {"status": "error", "message": str(e)}

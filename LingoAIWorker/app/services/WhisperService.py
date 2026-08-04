@@ -8,7 +8,7 @@ load_dotenv()
 print("Thư mục Cache hiện tại đang trỏ về:", os.environ.get("HF_HOME"))
 
 from faster_whisper import WhisperModel
-MODEL_SIZE = "small"
+MODEL_SIZE = "large-v3-turbo"
 _model = None  # Lazy loaded — chỉ load khi cần, unload sau khi xong
 
 

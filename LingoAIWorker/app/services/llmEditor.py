@@ -12,7 +12,7 @@ load_dotenv()
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-def cleanTranscript(rawTranscript, videoTitle, videoTags):
+def cleanTranscript(rawTranscript, videoTitle, videoTags, channel=""):
     """Dùng Gemini để làm sạch lỗi STT từ Whisper. Giữ nguyên cấu trúc JSON."""
     rawTranscriptStr = json.dumps(rawTranscript, ensure_ascii=False)
 
@@ -26,15 +26,16 @@ def cleanTranscript(rawTranscript, videoTitle, videoTags):
         Your task is to fix transcription errors using the video context provided below.
 
         ## Video Context
-        - **Title:** {videoTitle or "N/A"}
-        - **Tags:**  {videoTags or "N/A"}
+        - **Title:**   {videoTitle or "N/A"}
+        - **Channel:** {channel or "N/A"}
+        - **Tags:**    {videoTags or "N/A"}
 
         ## Raw Transcript (JSON)
         {rawTranscriptStr}
 
         ## Correction Rules (STRICTLY FOLLOW ALL)
         1. **Fix phonetic/homophone errors** caused by fast speech, regional accents, or similar-sounding syllables.
-        2. **Normalize proper nouns** using the title and tags as ground truth.
+        2. **Normalize proper nouns** using the title, channel name, and tags as ground truth.
            - Example: If tags contain "Animal Crossing" and the transcript says "동물에서" → correct to "동물의 숲".
         3. **Do NOT paraphrase or rephrase** any sentence. Only fix clear transcription errors.
         4. **Do NOT change, add, or remove** any "time" field values. Timestamps are sacred.
@@ -84,11 +85,6 @@ def clear_vram():
 
 
 def _extract_segments(raw):
-    """
-    Model 7B hay trả về object thay vì array dù đã yêu cầu array.
-    Strategy: yêu cầu model wrap trong {"segments": [...]}, rồi extract ở đây.
-    Fallback: tìm list ở bất kỳ key nào, hoặc dict-of-dicts.
-    """
     if isinstance(raw, list):
         return raw
     if isinstance(raw, dict):
@@ -108,11 +104,6 @@ def _extract_segments(raw):
     return None
 
 def translate_subtitles(data, src_lang="en", tgt_lang="vi", batch_size=10):
-    """
-    Dịch subtitle sạch (từ YouTube native sub) sang ngôn ngữ đích qua Qwen.
-    Không fix lỗi STT vì text đã chuẩn sẵn.
-    Input/Output schema: [{"time": "...", "text": "...", "translated": "..."}]
-    """
     src_lang_name = LANG_NAME_MAP.get(src_lang, src_lang)
     tgt_lang_name = LANG_NAME_MAP.get(tgt_lang, tgt_lang)
     final_output = []

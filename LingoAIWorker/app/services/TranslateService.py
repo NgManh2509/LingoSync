@@ -1,7 +1,15 @@
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import torch
+import time
+import os
 import logging
 from deep_translator import GoogleTranslator
+from google import genai
+from google.genai import types
+from dotenv import load_dotenv
+
+load_dotenv()
+_gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 logging.basicConfig(
     level=logging.INFO,
@@ -155,17 +163,80 @@ def get_nllb_lang_code(whisper_lang_code, default_lang="eng_Latn"):
 #     return data
 #
 
-def translateUsingGoogle(data, src_lang="en", tgt_lang="vi"):
+_GOOGLE_ERROR_MARKERS = (
+    "Error ", "Server Error", "<!DOCTYPE", "<html", "That's an error"
+)
+
+def _is_google_error(text: str) -> bool:
+    if text is None:
+        return True
+    stripped = text.strip()
+    return any(marker in stripped for marker in _GOOGLE_ERROR_MARKERS)
+
+
+def _gemini_translate_one(text: str, tgt_lang: str) -> str:
+    prompt = (
+        f"Translate the following text into {tgt_lang}. "
+        "Return ONLY the translated text, no explanation or quotes.\n\n"
+        f"{text}"
+    )
     try:
-        google_translator = GoogleTranslator(source=src_lang, target=tgt_lang)
-        total = len(data)
-        logger.info(f"Bắt đầu dịch: tổng {total} dòng ({src_lang} → {tgt_lang})")
-
-        for i, item in enumerate(data, start=1):
-            item["translated"] = google_translator.translate(item["text"])
-            logger.info(f"  [{i}/{total}] {item['text'][:40]!r} → {item['translated'][:40]!r}")
-
-        logger.info(f"Dịch xong {total} dòng.")
-        return data
+        response = _gemini_client.models.generate_content(
+            model="gemini-3.1-flash-lite",
+            contents=prompt,
+            config=types.GenerateContentConfig(temperature=0.2)
+        )
+        return response.text.strip()
     except Exception as e:
-        raise RuntimeError(f"Translation failed: {e}")
+        logger.error(f"[Gemini fallback] Lỗi: {e}")
+        return text  
+
+
+def translateUsingGoogle(data, src_lang="en", tgt_lang="vi"):
+    if src_lang == tgt_lang:
+        logger.info(f"src_lang == tgt_lang ({src_lang}), bỏ qua dịch.")
+        for item in data:
+            item["translated"] = item["text"]
+        return data
+
+    google_translator = GoogleTranslator(source="auto", target=tgt_lang)
+    total = len(data)
+    logger.info(f"Bắt đầu dịch: tổng {total} dòng ({src_lang} → {tgt_lang})")
+
+    MAX_RETRIES = 2
+    RETRY_DELAY = 2
+
+    for i, item in enumerate(data, start=1):
+        text = item["text"].strip()
+        if not text:
+            item["translated"] = ""
+            continue
+
+        result = None
+        for attempt in range(1, MAX_RETRIES + 1):
+            try:
+                result = google_translator.translate(text)
+                if not _is_google_error(result):
+                    break
+                logger.warning(
+                    f"  [{i}/{total}] Google trả về lỗi (attempt {attempt}/{MAX_RETRIES}): "
+                    f"{str(result)[:60]!r}"
+                )
+            except Exception as e:
+                logger.warning(f"  [{i}/{total}] Google exception (attempt {attempt}/{MAX_RETRIES}): {e}")
+                result = None
+
+            if attempt < MAX_RETRIES:
+                time.sleep(RETRY_DELAY)
+
+        if _is_google_error(result):
+            logger.warning(f"  [{i}/{total}] Google fail sau {MAX_RETRIES} lần → chuyển Gemini fallback")
+            result = _gemini_translate_one(text, tgt_lang)
+            logger.info(f"  [{i}/{total}] [Gemini] {text[:40]!r} → {result[:40]!r}")
+        else:
+            logger.info(f"  [{i}/{total}] {text[:40]!r} → {result[:40]!r}")
+
+        item["translated"] = result
+
+    logger.info(f"Dịch xong {total} dòng.")
+    return data
