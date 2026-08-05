@@ -14,3 +14,4 @@ public interface DeckRepository extends JpaRepository<Deck, UUID> {
     List<Deck> findByUserId(UUID userId);
 
 }
+
