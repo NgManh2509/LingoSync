@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -76,5 +77,21 @@ public class DeckController {
             @Valid @RequestBody ReviewRequest request,
             Authentication authentication) {
         return ResponseEntity.ok(deckService.submitReview(request, authentication.getName()));
+    }
+
+    @PutMapping("/{deckId}")
+    public ResponseEntity<DeckResponse> updateDeck(
+            @PathVariable UUID deckId,
+            @Valid @RequestBody DeckRequest req,
+            Authentication authentication) {
+        return ResponseEntity.ok(deckService.updateDeck(deckId, req, authentication.getName()));
+    }
+
+    @DeleteMapping("/{deckId}/cards/{flashcardId}")
+    public ResponseEntity<Void> removeCardFromDeck(@PathVariable UUID deckId,
+            @PathVariable UUID flashcardId,
+            Authentication authentication) {
+        deckService.removeCardFromDeck(deckId, flashcardId, authentication.getName());
+        return ResponseEntity.noContent().build();
     }
 }

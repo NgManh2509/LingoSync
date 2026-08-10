@@ -36,7 +36,7 @@ public class SM2Algorithm {
             newIntervalDays = 1;
         }
 
-        String newStatus = (newRep == 0) ? "NEW"
+        String newStatus = (rating < 3) ? "LEARNING"
                 : (newRep == 1) ? "LEARNING" : "REVIEW";
 
         LocalDate nextReviewDate = LocalDate.now().plusDays(newIntervalDays);

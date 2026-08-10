@@ -5,7 +5,6 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
-
 import org.springframework.stereotype.Service;
 
 import com.lingosync.lingo_backend.dto.DeckRequest;
@@ -17,6 +16,9 @@ import com.lingosync.lingo_backend.entity.Deck;
 import com.lingosync.lingo_backend.entity.Flashcard;
 import com.lingosync.lingo_backend.entity.Users;
 import com.lingosync.lingo_backend.entity.Vocabulary;
+import com.lingosync.lingo_backend.exception.ConflictException;
+import com.lingosync.lingo_backend.exception.ForbiddenException;
+import com.lingosync.lingo_backend.exception.ResourceNotFoundException;
 import com.lingosync.lingo_backend.exception.UserNotFoundException;
 import com.lingosync.lingo_backend.repository.DeckRepository;
 import com.lingosync.lingo_backend.repository.FlashcardRepository;
@@ -41,13 +43,12 @@ public class DeckService {
                 .orElseThrow(() -> new UserNotFoundException("Không tìm thấy người dùng"));
     }
 
-    // Tìm deck theo id và xác minh deck thuộc về user đang thao tác
     private Deck findDeckOwnedByUser(UUID deckId, UUID userId) {
         Deck deck = deckRepository.findById(deckId)
-                .orElseThrow(() -> new RuntimeException("Deck không tồn tại"));
+                .orElseThrow(() -> new ResourceNotFoundException("Deck không tồn tại"));
 
         if (!deck.getUser().getId().equals(userId)) {
-            throw new RuntimeException("Không có quyền truy cập deck này");
+            throw new ForbiddenException("Không có quyền truy cập deck này");
         }
 
         return deck;
@@ -76,28 +77,24 @@ public class DeckService {
     public List<DeckResponse> getMyDecks(String userEmail) {
         Users user = findUserByEmail(userEmail);
         List<Deck> decks = deckRepository.findByUserId(user.getId());
-        return decks.stream().map(deck -> {
-            List<Flashcard> cards = flashcardRepository.findByDeckId(deck.getId());
-            long dueCount = cards.stream()
-                    .filter(fc -> "NEW".equals(fc.getStatus())
-                            || (fc.getNextReviewDate() != null
-                                    && !fc.getNextReviewDate().isAfter(LocalDate.now())))
-                    .count();
-            return DeckResponse.builder()
-                    .id(deck.getId())
-                    .name(deck.getName())
-                    .description(deck.getDescription())
-                    .flashCardCount(cards.size())
-                    .dueCount((int) dueCount)
-                    .createdAt(deck.getCreatedAt())
-                    .build();
-        }).toList();
+
+        return decks.stream().map(deck -> DeckResponse.builder()
+                .id(deck.getId())
+                .name(deck.getName())
+                .description(deck.getDescription())
+                .flashCardCount((int) flashcardRepository.countByDeckId(deck.getId()))
+                .dueCount((int) flashcardRepository.countDueCards(deck.getId(), LocalDate.now()))
+                .createdAt(deck.getCreatedAt())
+                .build()).toList();
     }
 
     // Tạo deck mới cho user
     @Transactional
     public DeckResponse createDeck(DeckRequest req, String userEmail) {
         Users user = findUserByEmail(userEmail);
+        if (deckRepository.findByUserIdAndName(user.getId(), req.getName()).isPresent()) {
+            throw new ConflictException("Bạn đã có deck với tên này rồi");
+        }
         Deck deck = Deck.builder().name(req.getName()).description(req.getDescription()).user(user).build();
         deck = deckRepository.save(deck);
         return DeckResponse.builder()
@@ -118,22 +115,16 @@ public class DeckService {
         deckRepository.delete(deck);
     }
 
-    // Lấy thông tin chi tiết 1 deck (tên, mô tả, số card, số card cần ôn)
     @Transactional(readOnly = true)
     public DeckResponse getDeckDetail(UUID deckId, String userEmail) {
         Users user = findUserByEmail(userEmail);
         Deck deck = findDeckOwnedByUser(deckId, user.getId());
-        List<Flashcard> cards = flashcardRepository.findByDeckId(deck.getId());
-        long dueCount = cards.stream()
-                .filter(fc -> "NEW".equals(fc.getStatus())
-                        || (fc.getNextReviewDate() != null && !fc.getNextReviewDate().isAfter(LocalDate.now())))
-                .count();
         return DeckResponse.builder()
                 .id(deck.getId())
                 .name(deck.getName())
                 .description(deck.getDescription())
-                .flashCardCount(cards.size())
-                .dueCount((int) dueCount)
+                .flashCardCount((int) flashcardRepository.countByDeckId(deck.getId()))
+                .dueCount((int) flashcardRepository.countDueCards(deck.getId(), LocalDate.now()))
                 .createdAt(deck.getCreatedAt())
                 .build();
     }
@@ -146,7 +137,8 @@ public class DeckService {
         return flashcardRepository.findByDeckId(deckId).stream().map(this::toFlashcardResponse).toList();
     }
 
-    // Lấy các card cần ôn hôm nay: card NEW hoặc đã đến hạn (nextReviewDate <= today)
+    // Lấy các card cần ôn hôm nay: card NEW hoặc đã đến hạn (nextReviewDate <=
+    // today)
     @Transactional(readOnly = true)
     public List<FlashcardResponse> getCardsForReview(UUID deckId, String userEmail) {
         Users user = findUserByEmail(userEmail);
@@ -163,10 +155,10 @@ public class DeckService {
     public ReviewResponse submitReview(ReviewRequest req, String userEmail) {
         Users user = findUserByEmail(userEmail);
         Flashcard flashcard = flashcardRepository.findById(req.getFlashcardId())
-                .orElseThrow(() -> new RuntimeException("FlashCard không tồn tại"));
+                .orElseThrow(() -> new ResourceNotFoundException("Flashcard không tồn tại"));
 
         if (!flashcard.getDeck().getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("Không có quyền truy cập flashcard này");
+            throw new ForbiddenException("Không có quyền truy cập flashcard này");
         }
 
         SM2Algorithm.SM2Result res = SM2Algorithm.calculate(flashcard.getRepetitions(), flashcard.getIntervalDays(),
@@ -197,14 +189,14 @@ public class DeckService {
         Deck deck = findDeckOwnedByUser(deckId, user.getId());
 
         Vocabulary vocab = vocabularyRepository.findById(vocabularyId)
-                .orElseThrow(() -> new RuntimeException("Vocabulary not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Vocabulary không tồn tại"));
 
         if (!vocab.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("Vocabulary không thuộc về bạn");
+            throw new ForbiddenException("Vocabulary không thuộc về bạn");
         }
 
         if (flashcardRepository.existsByDeckIdAndVocabularyId(deckId, vocabularyId)) {
-            throw new RuntimeException("Từ vựng này đã có trong deck này");
+            throw new ConflictException("Từ vựng này đã có trong deck này");
         }
 
         Flashcard flashcard = flashcardRepository.save(
@@ -219,4 +211,38 @@ public class DeckService {
         return toFlashcardResponse(flashcard);
     }
 
+    @Transactional
+    public DeckResponse updateDeck(UUID deckId, DeckRequest req, String userEmail) {
+        Users user = findUserByEmail(userEmail);
+        Deck deck = findDeckOwnedByUser(deckId, user.getId());
+        if (!deck.getName().equals(req.getName())) {
+            if (deckRepository.findByUserIdAndName(user.getId(), req.getName()).isPresent()) {
+                throw new ConflictException("Bạn đã có deck với tên này rồi");
+            }
+        }
+        deck.setName(req.getName());
+        deck.setDescription(req.getDescription());
+        deckRepository.save(deck);
+        return DeckResponse.builder()
+                .id(deck.getId())
+                .name(deck.getName())
+                .description(deck.getDescription())
+                .flashCardCount((int) flashcardRepository.countByDeckId(deck.getId()))
+                .dueCount((int) flashcardRepository.countDueCards(deck.getId(), LocalDate.now()))
+                .createdAt(deck.getCreatedAt())
+                .build();
+    }
+
+    @Transactional
+    public void removeCardFromDeck(UUID deckId, UUID flashcardId, String userEmail) {
+        Users user = findUserByEmail(userEmail);
+        findDeckOwnedByUser(deckId, user.getId());
+
+        Flashcard flashcard = flashcardRepository.findById(flashcardId)
+                .orElseThrow(() -> new ResourceNotFoundException("Flashcard không tồn tại"));
+        if (!flashcard.getDeck().getId().equals(deckId)) {
+            throw new ResourceNotFoundException("Flashcard không thuộc deck này");
+        }
+        flashcardRepository.delete(flashcard);
+    }
 }

@@ -11,12 +11,20 @@ import org.springframework.data.repository.query.Param;
 import com.lingosync.lingo_backend.entity.Flashcard;
 
 public interface FlashcardRepository extends JpaRepository<Flashcard, UUID> {
-    boolean existsByDeckIdAndVocabularyId(UUID deckId, UUID vocabularyId);
+        boolean existsByDeckIdAndVocabularyId(UUID deckId, UUID vocabularyId);
 
-    List<Flashcard> findByDeckId(UUID deckId);
+        List<Flashcard> findByDeckId(UUID deckId);
 
-    @Query("SELECT f FROM Flashcard f WHERE f.deck.id = :deckId AND " +
-            "(f.status = 'NEW' OR f.nextReviewDate <= :today)")
-    List<Flashcard> findCardsForReview(@Param("deckId") UUID deckId,
-            @Param("today") LocalDate today);
+        @Query("SELECT f FROM Flashcard f WHERE f.deck.id = :deckId AND " +
+                        "(f.status = 'NEW' OR f.nextReviewDate <= :today)")
+        List<Flashcard> findCardsForReview(@Param("deckId") UUID deckId,
+                        @Param("today") LocalDate today);
+
+        @Query("SELECT COUNT(f) FROM Flashcard f WHERE f.deck.id = :deckId")
+        long countByDeckId(@Param("deckId") UUID deckId);
+
+        @Query("SELECT COUNT(f) FROM Flashcard f WHERE f.deck.id = :deckId " +
+                        "AND (f.status = 'NEW' OR f.nextReviewDate <= :today)")
+        long countDueCards(@Param("deckId") UUID deckId, @Param("today") LocalDate today);
+
 }
