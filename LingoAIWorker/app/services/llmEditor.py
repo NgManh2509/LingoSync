@@ -1,6 +1,7 @@
 import json
 import gc
 import inspect
+import time
 import torch
 import ollama
 import os
@@ -12,8 +13,9 @@ load_dotenv()
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
+GEMINI_MODEL = "gemini-3.1-flash-lite"
+
 def cleanTranscript(rawTranscript, videoTitle, videoTags, channel=""):
-    """Dùng Gemini để làm sạch lỗi STT từ Whisper. Giữ nguyên cấu trúc JSON."""
     rawTranscriptStr = json.dumps(rawTranscript, ensure_ascii=False)
 
     system_instruction = (
@@ -44,19 +46,32 @@ def cleanTranscript(rawTranscript, videoTitle, videoTags, channel=""):
 
         Return only the corrected JSON array.""")
 
-    try:
-        response = client.models.generate_content(
-            model="gemini-3.1-flash-lite",
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                system_instruction=system_instruction,
-                response_mime_type="application/json"
+    config = types.GenerateContentConfig(
+        system_instruction=system_instruction,
+        response_mime_type="application/json",
+        temperature=0.2
+    )
+
+    for attempt in range(1, 4):
+        try:
+            response = client.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=prompt,
+                config=config
             )
-        )
-        return json.loads(response.text)
-    except Exception as e:
-        print(f"[Gemini] Lỗi cleanTranscript: {e}")
-        return rawTranscript  # fallback: giữ nguyên
+            if response and response.text:
+                return json.loads(response.text)
+        except Exception as e:
+            err_str = str(e)
+            if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "quota" in err_str.lower():
+                wait_time = attempt * 3.0
+                print(f"[llmEditor] {GEMINI_MODEL} bị 429 Quota (attempt {attempt}/3). Chờ {wait_time}s rồi thử lại...")
+                time.sleep(wait_time)
+            else:
+                print(f"[llmEditor] Lỗi {GEMINI_MODEL}: {e}")
+                time.sleep(1.5)
+
+    return rawTranscript
 
 
 LANG_NAME_MAP = {

@@ -21,6 +21,11 @@ def getYoutubeSubtitle(url: str, lang: str = "en"):
             filenameVTT = f"{video_id}.{lang}.vtt"
             filename = filenameSrt if os.path.exists(filenameSrt) else filenameVTT if os.path.exists(filenameVTT) else None
 
+            title = info.get("title", "")
+            tags = info.get("tags") or []
+            tags_str = ", ".join(tags[:20])
+            channel = info.get("uploader") or info.get("channel") or ""
+
         if filename:
             with open(filename, "r", encoding="utf-8") as f:
                 content = f.read()
@@ -39,7 +44,13 @@ def getYoutubeSubtitle(url: str, lang: str = "en"):
                     "text": clean_text
                 })
             os.remove(filename)
-            return {"status": "success", "data": json_data}
+            return {
+                "status": "success",
+                "data": json_data,
+                "title": title,
+                "tags": tags_str,
+                "channel": channel
+            }
         else:
             return {"status": "error", "message": "Không tìm thấy file phụ đề."}
     except Exception as e:
