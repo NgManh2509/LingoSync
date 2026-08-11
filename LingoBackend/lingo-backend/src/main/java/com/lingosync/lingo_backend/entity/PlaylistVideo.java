@@ -2,7 +2,7 @@ package com.lingosync.lingo_backend.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
@@ -34,7 +34,7 @@ public class PlaylistVideo {
     @Column(name = "position")
     private Integer position;
 
-    @ColumnDefault("now()")
+    @CreationTimestamp
     @Column(name = "added_at")
     private OffsetDateTime addedAt;
 
