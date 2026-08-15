@@ -50,3 +50,8 @@ desktop.ini
 
 **/*.log
 **/logs/
+
+**/original/
+**/Original/
+**/subtitles/
+**/storage/

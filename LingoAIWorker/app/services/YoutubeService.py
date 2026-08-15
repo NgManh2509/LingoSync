@@ -1,7 +1,15 @@
 import yt_dlp
 import os
 import re
+import json
 
+def saveOriginalSub(data, folder_path: str = "subtitles", video_id: str = "original") -> str:
+   os.makedirs(folder_path, exist_ok=True)
+   file_path = os.path.join(folder_path, f"{video_id}_original.json")
+   with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+   return file_path
+        
 def getYoutubeSubtitle(url: str, lang: str = "en"):
     ydl_opts = {
         'skip_download': True,
@@ -44,6 +52,7 @@ def getYoutubeSubtitle(url: str, lang: str = "en"):
                     "text": clean_text
                 })
             os.remove(filename)
+            saveOriginalSub(json_data, folder_path="original/subtitles", video_id=video_id)
             return {
                 "status": "success",
                 "data": json_data,
