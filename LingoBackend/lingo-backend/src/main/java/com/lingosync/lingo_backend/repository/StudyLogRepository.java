@@ -14,7 +14,6 @@ import com.lingosync.lingo_backend.entity.StudyLog;
 
 @Repository
 public interface StudyLogRepository extends JpaRepository<StudyLog, UUID> {
-    // user_Id = truy cập field "id" bên trong object "user" của StudyLog
     Optional<StudyLog> findByUser_IdAndDate(UUID userId, LocalDate date);
 
     List<StudyLog> findByUser_IdAndDateBetweenOrderByDateAsc(UUID userId, LocalDate startDate, LocalDate endDate);
@@ -25,4 +24,9 @@ public interface StudyLogRepository extends JpaRepository<StudyLog, UUID> {
     @Query("SELECT COALESCE(SUM(s.videosWatched), 0) FROM StudyLog s WHERE s.user.id = :userId")
     Integer sumVideosWatchedByUserId(@Param("userId") UUID userId);
 
+    @Query("SELECT COALESCE(SUM(s.wordsLearned), 0) FROM StudyLog s WHERE s.user.id = :userId")
+    Integer sumWordsLearnedByUserId(@Param("userId") UUID userId);
+
+    @Query("SELECT COALESCE(SUM(s.wordsReviewed), 0) FROM StudyLog s WHERE s.user.id = :userId")
+    Integer sumWordsReviewedByUserId(@Param("userId") UUID userId);
 }

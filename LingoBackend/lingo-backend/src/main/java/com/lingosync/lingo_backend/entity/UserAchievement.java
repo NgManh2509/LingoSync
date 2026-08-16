@@ -1,9 +1,8 @@
 package com.lingosync.lingo_backend.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import org.hibernate.annotations.ColumnDefault;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
@@ -11,6 +10,9 @@ import java.time.OffsetDateTime;
 
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Entity
 @Table(name = "user_achievements")
 public class UserAchievement {
@@ -29,8 +31,8 @@ public class UserAchievement {
     @JoinColumn(name = "achievement_id", nullable = false)
     private Achievements achievement;
 
-    @ColumnDefault("now()")
-    @Column(name = "achieved_at")
+    @CreationTimestamp
+    @Column(name = "achieved_at", updatable = false)
     private OffsetDateTime achievedAt;
 
 
