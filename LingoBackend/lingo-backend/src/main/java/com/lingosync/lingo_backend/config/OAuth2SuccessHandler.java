@@ -47,15 +47,15 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
                     .build();
             response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
             try {
-                System.out.println("Redirecting to frontend...");
-                response.sendRedirect(frontendUrl);
+                System.out.println("Redirecting to frontend with token...");
+                response.sendRedirect(frontendUrl + "/auth/callback?token=" + token);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }, () -> {
             System.out.println("CRITICAL ERROR: User not found in DB for email " + email);
             try {
-                response.sendRedirect(frontendUrl + "?error=user_not_found");
+                response.sendRedirect(frontendUrl + "/login?error=user_not_found");
             } catch (IOException e) {
                 e.printStackTrace();
             }

@@ -49,7 +49,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if(jwtService.isTokenValid(token)) {
             String email = jwtService.extractEmail(token);
             userRepository.findByEmail(email).ifPresent(user -> {
-                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(user, null, List.of());
+                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(user.getEmail(), null, List.of());
                 SecurityContextHolder.getContext().setAuthentication(auth);
             });
         }
