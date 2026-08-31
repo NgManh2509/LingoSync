@@ -36,12 +36,14 @@ const LoginPage = () => {
       </div>
 
       <header className="w-full max-w-4xl flex items-center justify-between relative z-10">
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-[5px] bg-white/70 backdrop-blur-md border border-white/50 shadow-xs">
-          <div className="w-6 h-6 rounded-[5px] bg-zinc-900 flex items-center justify-center text-white shadow-xs">
-            <span className="font-bold text-xs">L</span>
-          </div>
-          <span className="font-bold text-sm text-zinc-900 tracking-tight">
-            Lingo<span className="text-zinc-500 font-normal">Sync</span>
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-[5px] bg-white/80 backdrop-blur-md border border-slate-200/80 shadow-xs">
+          <img 
+            src="/notion-logo-svgrepo-com.svg" 
+            alt="LingoSync Logo" 
+            className="w-6 h-6 object-contain"
+          />
+          <span className="font-bold text-sm text-slate-900 tracking-tight">
+            Lingo<span className="text-slate-500 font-normal">Sync</span>
           </span>
         </div>
 
@@ -53,8 +55,12 @@ const LoginPage = () => {
 
       <main className="w-full max-w-[360px] my-auto relative z-10">
         <div className="bg-white/85 border border-white/60 rounded-[5px] p-7 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.08)] backdrop-blur-xl text-center">
-          <div className="w-9 h-9 rounded-[5px] bg-zinc-900 text-white flex items-center justify-center mx-auto mb-5 shadow-xs">
-            <Sparkles className="w-4 h-4 text-zinc-200" />
+          <div className="w-10 h-10 flex items-center justify-center mx-auto mb-5">
+            <img 
+              src="/notion-logo-svgrepo-com.svg" 
+              alt="LingoSync Logo" 
+              className="w-10 h-10 object-contain drop-shadow-xs"
+            />
           </div>
 
           <h1 className="text-xl font-semibold text-zinc-900 tracking-tight mb-1.5">
