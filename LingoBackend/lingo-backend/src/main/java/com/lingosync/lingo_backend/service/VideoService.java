@@ -70,56 +70,100 @@ public class VideoService {
                 return url;
         }
 
+        private List<WorkerSubtitleItem> fetchSubtitlesFromUrl(String scriptUrl) {
+                if (scriptUrl == null || scriptUrl.isBlank()) {
+                        return List.of();
+                }
+                try {
+                        java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder()
+                                        .followRedirects(java.net.http.HttpClient.Redirect.ALWAYS)
+                                        .build();
+                        java.net.http.HttpRequest req = java.net.http.HttpRequest.newBuilder()
+                                        .uri(java.net.URI.create(scriptUrl))
+                                        .header("User-Agent", "Mozilla/5.0")
+                                        .GET()
+                                        .build();
+                        java.net.http.HttpResponse<String> resp = client.send(req,
+                                        java.net.http.HttpResponse.BodyHandlers.ofString());
+                        if (resp.statusCode() == 200 && resp.body() != null && !resp.body().isBlank()) {
+                                return objectMapper.readValue(
+                                                resp.body(),
+                                                new com.fasterxml.jackson.core.type.TypeReference<List<WorkerSubtitleItem>>() {
+                                                });
+                        }
+                } catch (Exception e) {
+                        System.err.println("[VideoService] Error fetching subtitles: " + e.getMessage());
+                }
+                return List.of();
+        }
+
         public VideoDetailResponse processVideo(ProcessVideoRequest request, String userEmail) {
                 String youtubeId = extractYoutubeId(request.getYoutubeUrl());
 
                 Optional<Videos> existingVideos = videoRepository.findByYoutubeIdAndTargetLanguage(youtubeId,
                                 request.getTargetLanguage());
+                Videos videoToProcess;
                 if (existingVideos.isPresent()) {
                         Videos video = existingVideos.get();
-                        return VideoDetailResponse.builder()
-                                        .id(video.getId())
-                                        .youtubeId(video.getYoutubeId())
-                                        .title(video.getTitle())
-                                        .scriptUrl(video.getScriptUrl())
-                                        .status(video.getStatus())
-                                        .subtitles(null)
-                                        .build();
+                        if ("READY".equals(video.getStatus()) && video.getScriptUrl() != null) {
+                                List<WorkerSubtitleItem> subs = fetchSubtitlesFromUrl(video.getScriptUrl());
+                                return VideoDetailResponse.builder()
+                                                .id(video.getId())
+                                                .youtubeId(video.getYoutubeId())
+                                                .title(video.getTitle())
+                                                .scriptUrl(video.getScriptUrl())
+                                                .status(video.getStatus())
+                                                .subtitles(subs)
+                                                .build();
+                        }
+                        videoToProcess = video;
+                        videoToProcess.setStatus("PENDING");
+                        videoRepository.save(videoToProcess);
+                } else {
+                        Users user = userRepository.findByEmail(userEmail)
+                                        .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+                        Videos newVideos = Videos.builder().user(user).youtubeId(youtubeId)
+                                        .title("YouTube Lesson (" + youtubeId + ")")
+                                        .thumbnailUrl("https://img.youtube.com/vi/" + youtubeId + "/hqdefault.jpg")
+                                        .originalLanguage(request.getOriginalLanguage() != null ? request.getOriginalLanguage()
+                                                        : "en")
+                                        .targetLanguage(request.getTargetLanguage()).status("PENDING").build();
+
+                        videoToProcess = videoRepository.save(newVideos);
                 }
-                Users user = userRepository.findByEmail(userEmail)
-                                .orElseThrow(() -> new UserNotFoundException("User not found"));
-
-                Videos newVideos = Videos.builder().user(user).youtubeId(youtubeId)
-                                .originalLanguage(request.getOriginalLanguage() != null ? request.getOriginalLanguage()
-                                                : "en")
-                                .targetLanguage(request.getTargetLanguage()).status("PENDING").build();
-
-                Videos savedVideo = videoRepository.save(newVideos);
 
                 WorkerRequest workerReq = WorkerRequest.builder().url(request.getYoutubeUrl())
                                 .lang(request.getOriginalLanguage() != null ? request.getOriginalLanguage() : "en")
                                 .tgt_lang(request.getTargetLanguage()).build();
 
                 try {
-                        WorkerResponse workerRes = restClient.post().uri("/get_subtitles").body(workerReq).retrieve()
+                        WorkerResponse workerRes = restClient.post().uri("/api/video/get_subtitles").body(workerReq).retrieve()
                                         .body(WorkerResponse.class);
 
-                        String scriptUrl = uploadScript(savedVideo.getId(), workerRes.getData());
+                        String scriptUrl = uploadScript(videoToProcess.getId(), workerRes.getData());
 
-                        savedVideo.setStatus("READY");
-                        savedVideo.setScriptUrl(scriptUrl);
-                        videoRepository.save(savedVideo);
+                        videoToProcess.setStatus("READY");
+                        videoToProcess.setScriptUrl(scriptUrl);
+                        if (workerRes.getTitle() != null && !workerRes.getTitle().isBlank()) {
+                                videoToProcess.setTitle(workerRes.getTitle());
+                        }
+                        if (videoToProcess.getThumbnailUrl() == null) {
+                                videoToProcess.setThumbnailUrl("https://img.youtube.com/vi/" + youtubeId + "/hqdefault.jpg");
+                        }
+                        videoRepository.save(videoToProcess);
 
                         return VideoDetailResponse.builder()
-                                        .id(savedVideo.getId())
-                                        .youtubeId(savedVideo.getYoutubeId())
-                                        .title(savedVideo.getTitle())
-                                        .status(savedVideo.getStatus())
+                                        .id(videoToProcess.getId())
+                                        .youtubeId(videoToProcess.getYoutubeId())
+                                        .title(videoToProcess.getTitle())
+                                        .status(videoToProcess.getStatus())
+                                        .scriptUrl(scriptUrl)
                                         .subtitles(workerRes != null ? workerRes.getData() : null)
                                         .build();
                 } catch (Exception e) {
-                        savedVideo.setStatus("FAILED");
-                        videoRepository.save(savedVideo);
+                        videoToProcess.setStatus("FAILED");
+                        videoRepository.save(videoToProcess);
                         throw new WorkerApiException("Worker API failed: " + e.getMessage());
                 }
         }
@@ -127,13 +171,14 @@ public class VideoService {
         public VideoDetailResponse getVideoDetail(UUID videoId) {
                 Videos video = videoRepository.findById(videoId)
                                 .orElseThrow(() -> new ResourceNotFoundException("Video không tồn tại"));
+                List<WorkerSubtitleItem> subs = fetchSubtitlesFromUrl(video.getScriptUrl());
                 return VideoDetailResponse.builder()
                                 .id(video.getId())
                                 .youtubeId(video.getYoutubeId())
                                 .title(video.getTitle())
                                 .scriptUrl(video.getScriptUrl())
                                 .status(video.getStatus())
-                                .subtitles(null)
+                                .subtitles(subs)
                                 .build();
         }
 

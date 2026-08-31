@@ -12,5 +12,6 @@ import lombok.NoArgsConstructor;
 @Builder
 public class WorkerResponse {
     private String source;
+    private String title;
     private List<WorkerSubtitleItem> data;
 }

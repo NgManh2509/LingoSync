@@ -17,6 +17,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class UserProfileResponse {
     private UUID id;
+    private String email;
     private String username;
     private String avatarUrl;
     private Integer xpPoints;
@@ -33,6 +34,7 @@ public class UserProfileResponse {
 
         return UserProfileResponse.builder()
                 .id(user.getId())
+                .email(user.getEmail())
                 .username(user.getUsername())
                 .avatarUrl(user.getAvatarUrl())
                 .xpPoints(xp)

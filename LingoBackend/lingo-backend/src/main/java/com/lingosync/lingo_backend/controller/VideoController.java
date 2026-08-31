@@ -35,13 +35,13 @@ public class VideoController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/{videoId}")
+    @GetMapping("/{videoId:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}}")
     public ResponseEntity<VideoDetailResponse> getVideoDetail(@PathVariable UUID videoId) {
         VideoDetailResponse response = videoService.getVideoDetail(videoId);
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/{videoId}/history")
+    @PostMapping("/{videoId:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}}/history")
     public ResponseEntity<VideoHistoryResponse> updateWatchHistory(@PathVariable UUID videoId,
             @Valid @RequestBody VideoHistoryRequest req,
             Authentication authentication) {
