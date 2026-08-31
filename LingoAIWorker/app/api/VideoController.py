@@ -1,8 +1,7 @@
-
 from fastapi import APIRouter, HTTPException
 from app.services.TranslateService import translateUsingGemini, translateUsingGoogle
-from app.models.video import VideoSubtitle
-from app.services.YoutubeService import getYoutubeSubtitle, downloadAudio
+from app.models.video import VideoSubtitle, VideoUrlRequest
+from app.services.YoutubeService import getYoutubeSubtitle, downloadAudio, get_subtitle_list
 from app.services.WhisperService import transcribeAudio, unload_model
 from app.services.llmEditor import cleanTranscript
 
@@ -19,7 +18,7 @@ async def getSub(req: VideoSubtitle):
             video_tags=yt_res.get("tags", ""),
             channel=yt_res.get("channel", "")
         )
-        return {"source": "youtube_native", "data": translated_res}
+        return {"source": "youtube_native", "data": translated_res, "title": yt_res.get("title", "")}
     audio_res = downloadAudio(req.url)
     if audio_res["status"] != "success":
         raise HTTPException(status_code=400, detail="Không thể tải video/audio từ URL này.")
@@ -43,4 +42,8 @@ async def getSub(req: VideoSubtitle):
         channel=video_channel
     )
 
-    return {"source": "cleaned_whisper", "data": translated}
+    return {"source": "cleaned_whisper", "data": translated, "title": video_title}
+
+@router.post("/subtitle-list")
+async def list_subtitles_endpoint(req: VideoUrlRequest):
+    return get_subtitle_list(req.url)

@@ -14,7 +14,7 @@ def getYoutubeSubtitle(url: str, lang: str = "en"):
     ydl_opts = {
         'skip_download': True,
         'writesubtitles': True,
-        'writeautomaticsub': False,
+        'writeautomaticsub': True,
         'subtitleslangs': [lang],
         'subtitlesformat': 'srt',
         'outtmpl': '%(id)s.%(ext)s',
@@ -97,3 +97,68 @@ def downloadAudio(url: str):
             }
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+
+def get_subtitle_list(url: str) -> dict:
+    ydl_opts = {
+        'skip_download': True,
+        'quiet': True,
+        'no_warnings': True
+    }
+
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            if not info:
+                return {"status": "error", "message": "Không thể lấy thông tin video."}
+
+            video_id = info.get("id", "")
+            title = info.get("title", "")
+            thumbnail = info.get("thumbnail", "")
+            duration = info.get("duration", 0)
+            channel = info.get("uploader") or info.get("channel") or ""
+
+            raw_manual = info.get('subtitles', {}) or {}
+            raw_auto = info.get('automatic_captions', {}) or {}
+
+            subtitles_list = []
+
+            for lang_code, formats in raw_manual.items():
+                name = lang_code
+                if formats and isinstance(formats, list) and len(formats) > 0:
+                    name = formats[0].get('name') or lang_code
+                subtitles_list.append({
+                    "code": lang_code,
+                    "name": name,
+                    "type": "manual",
+                    "is_auto": False
+                })
+
+            for lang_code, formats in raw_auto.items():
+                if any(s["code"] == lang_code and not s["is_auto"] for s in subtitles_list):
+                    continue
+                name = lang_code
+                if formats and isinstance(formats, list) and len(formats) > 0:
+                    name = formats[0].get('name') or f"{lang_code} (Auto)"
+                subtitles_list.append({
+                    "code": lang_code,
+                    "name": name,
+                    "type": "auto",
+                    "is_auto": True
+                })
+
+            return {
+                "status": "success",
+                "video_id": video_id,
+                "title": title,
+                "channel": channel,
+                "thumbnail": thumbnail,
+                "duration": duration,
+                "subtitles": subtitles_list,
+                "has_subtitles": len(subtitles_list) > 0
+            }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
