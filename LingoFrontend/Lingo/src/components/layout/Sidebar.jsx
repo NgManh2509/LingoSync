@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { 
@@ -22,7 +22,7 @@ import {
   MdHistory
 } from 'react-icons/md';
 import { BsRobot } from 'react-icons/bs';
-import CreateVideoModal from '../common/CreateVideoModal';
+import apiClient from '../../api/apiClient';
 
 const Sidebar = () => {
   const { user, logout } = useAuth();
@@ -31,7 +31,22 @@ const Sidebar = () => {
   const [libraryOpen, setLibraryOpen] = useState(true);
   const [activitiesOpen, setActivitiesOpen] = useState(true);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [playlists, setPlaylists] = useState([]);
+  const [playlistsOpen, setPlaylistsOpen] = useState(true);
+
+  useEffect(() => {
+    const fetchPlaylists = async () => {
+      try {
+        const res = await apiClient.get('/api/playlists');
+        if (res.data && Array.isArray(res.data)) {
+          setPlaylists(res.data);
+        }
+      } catch {
+        setPlaylists([]);
+      }
+    };
+    fetchPlaylists();
+  }, [location.pathname]);
 
   const getInitials = (username, email) => {
     const raw = username || (email ? email.split('@')[0] : 'U');
@@ -82,28 +97,6 @@ const Sidebar = () => {
               alt="LingoSync Logo" 
               className="w-7 h-7 object-contain"
             />
-          </button>
-        )}
-      </div>
-
-      <div className="px-3 pb-3">
-        {isCollapsed ? (
-          <button 
-            onClick={() => setShowCreateModal(true)}
-            className="w-full flex items-center justify-center p-2 rounded-[5px] border border-[#A67C52] bg-[#FFFDF8] hover:bg-[#F4EDE1] text-[#79542E] transition-colors cursor-pointer shadow-2xs"
-            title="Create Lesson"
-          >
-            <FiPlus className="w-4 h-4" />
-          </button>
-        ) : (
-          <button 
-            onClick={() => setShowCreateModal(true)}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-[5px] border border-[#A67C52] bg-[#FFFDF8] hover:bg-[#F4EDE1]/80 text-[#79542E] font-semibold text-xs transition-colors cursor-pointer shadow-2xs"
-          >
-            <div className="w-5 h-5 rounded-[4px] border border-[#A67C52] flex items-center justify-center text-[#79542E] bg-[#FFFDF8]">
-              <FiPlus className="w-3.5 h-3.5" />
-            </div>
-            <span>Create</span>
           </button>
         )}
       </div>
@@ -191,19 +184,66 @@ const Sidebar = () => {
                     <span>Lessons</span>
                   </NavLink>
 
-                  <NavLink
-                    to="/playlists"
-                    className={({ isActive }) =>
-                      `flex items-center gap-2.5 px-2.5 py-1.5 rounded-[5px] text-xs transition-colors ${
-                        isActive
-                          ? 'bg-[#F4EDE1] text-[#25231F] font-semibold'
-                          : 'text-[#777168] hover:text-[#25231F] hover:bg-[#FAF6EE]'
-                      }`
-                    }
-                  >
-                    <MdOutlineQueueMusic className="w-3.5 h-3.5" />
-                    <span>Playlists</span>
-                  </NavLink>
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <NavLink
+                        to="/playlists"
+                        className={({ isActive }) =>
+                          `flex-1 flex items-center gap-2.5 px-2.5 py-1.5 rounded-[5px] text-xs transition-colors ${
+                            isActive && !location.search
+                              ? 'bg-[#F4EDE1] text-[#25231F] font-semibold'
+                              : 'text-[#777168] hover:text-[#25231F] hover:bg-[#FAF6EE]'
+                          }`
+                        }
+                      >
+                        <MdOutlineQueueMusic className="w-3.5 h-3.5" />
+                        <span>Playlists</span>
+                        {playlists.length > 0 && (
+                          <span className="ml-auto text-[10px] bg-[#FAF6EE] border border-[#DED8CC] text-[#777168] px-1.5 py-0.2 rounded-[3px]">
+                            {playlists.length}
+                          </span>
+                        )}
+                      </NavLink>
+                      {playlists.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setPlaylistsOpen(!playlistsOpen)}
+                          className="p-1 text-[#777168] hover:text-[#25231F] rounded-[3px] hover:bg-[#FAF6EE] cursor-pointer"
+                        >
+                          {playlistsOpen ? (
+                            <FiChevronUp className="w-3 h-3" />
+                          ) : (
+                            <FiChevronDown className="w-3 h-3" />
+                          )}
+                        </button>
+                      )}
+                    </div>
+
+                    {playlistsOpen && playlists.length > 0 && (
+                      <div className="pl-6 space-y-0.5 pt-0.5">
+                        {playlists.map((pl, idx) => {
+                          const isCurrent = location.pathname === '/playlists' && new URLSearchParams(location.search).get('id') === String(pl.id);
+                          return (
+                            <NavLink
+                              key={pl.id || `side-pl-${idx}`}
+                              to={`/playlists?id=${pl.id}`}
+                              className={`flex items-center justify-between px-2 py-1 rounded-[4px] text-[11px] transition-colors truncate ${
+                                isCurrent
+                                  ? 'bg-[#F4EDE1] text-[#25231F] font-medium'
+                                  : 'text-[#777168] hover:text-[#25231F] hover:bg-[#FAF6EE]'
+                              }`}
+                              title={pl.name}
+                            >
+                              <span className="truncate">{pl.name}</span>
+                              <span className="text-[10px] text-[#A67C52] ml-1 shrink-0">
+                                {pl.totalVideos}
+                              </span>
+                            </NavLink>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
 
                   <NavLink
                     to="/vocabulary"
@@ -388,11 +428,6 @@ const Sidebar = () => {
           </div>
         )}
       </div>
-
-      <CreateVideoModal 
-        isOpen={showCreateModal} 
-        onClose={() => setShowCreateModal(false)} 
-      />
     </aside>
   );
 };

@@ -10,11 +10,13 @@ import {
   FiCheck
 } from 'react-icons/fi';
 import apiClient from '../../api/apiClient';
+import { useAuth } from '../../context/AuthContext';
 
 const CreateVideoModal = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [youtubeUrl, setYoutubeUrl] = useState('');
-  const [targetLanguage, setTargetLanguage] = useState('vi');
+  const [targetLanguage, setTargetLanguage] = useState(user?.nativeLanguage || 'vi');
   const [extractedId, setExtractedId] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
@@ -50,6 +52,9 @@ const CreateVideoModal = ({ isOpen, onClose }) => {
 
   useEffect(() => {
     if (isOpen) {
+      if (user?.nativeLanguage) {
+        setTargetLanguage(user.nativeLanguage);
+      }
       apiClient.get('/api/playlists')
         .then(res => {
           if (res.data && Array.isArray(res.data)) {
@@ -58,7 +63,7 @@ const CreateVideoModal = ({ isOpen, onClose }) => {
         })
         .catch(() => setPlaylists([]));
     }
-  }, [isOpen]);
+  }, [isOpen, user]);
 
   const handlePaste = async () => {
     try {
@@ -81,8 +86,8 @@ const CreateVideoModal = ({ isOpen, onClose }) => {
     try {
       const res = await apiClient.post('/api/videos/process', {
         youtubeUrl: youtubeUrl.trim(),
-        targetLanguage: targetLanguage,
-        originalLanguage: 'en'
+        targetLanguage: targetLanguage || user?.nativeLanguage || 'vi',
+        originalLanguage: user?.targetLanguage || 'en'
       });
 
       if (res.data?.id) {

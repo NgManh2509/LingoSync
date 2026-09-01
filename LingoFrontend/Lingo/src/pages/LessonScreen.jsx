@@ -8,9 +8,7 @@ import {
   FiVolumeX, 
   FiMaximize, 
   FiSearch, 
-  FiBookmark, 
   FiDownload, 
-  FiCheckCircle, 
   FiArrowLeft, 
   FiClock, 
   FiBookOpen,
@@ -21,9 +19,14 @@ import {
   FiLoader,
   FiAlertCircle
 } from 'react-icons/fi';
+import { MdOutlineQueueMusic } from 'react-icons/md';
 import apiClient from '../api/apiClient';
+import CreateVideoModal from '../components/common/CreateVideoModal';
+import AddToPlaylistModal from '../components/common/AddToPlaylistModal';
+import { useAuth } from '../context/AuthContext';
 
 const LessonScreen = () => {
+  const { user } = useAuth();
   const { videoId } = useParams();
   const navigate = useNavigate();
 
@@ -35,18 +38,22 @@ const LessonScreen = () => {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [importUrl, setImportUrl] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showAddToPlaylistModal, setShowAddToPlaylistModal] = useState(false);
 
   const [player, setPlayer] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
+  const currentTimeRef = useRef(0);
+  useEffect(() => {
+    currentTimeRef.current = currentTime;
+  }, [currentTime]);
   const [duration, setDuration] = useState(0);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [activeSubtitleIndex, setActiveSubtitleIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
-  const [isBookmarked, setIsBookmarked] = useState(false);
-  const [isCompleted, setIsCompleted] = useState(false);
 
   const [selectedWord, setSelectedWord] = useState(null);
   const [popoverPos, setPopoverPos] = useState({ x: 0, y: 0 });
@@ -117,6 +124,11 @@ const LessonScreen = () => {
           title: realTitle,
           formattedSubtitles
         });
+
+        apiClient.post(`/api/videos/${id}/history`, {
+          lastPositionSeconds: 0,
+          completed: false
+        }).catch(() => {});
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Không thể tải thông tin bài học.');
@@ -155,6 +167,15 @@ const LessonScreen = () => {
       fetchHistory();
       setLoading(false);
     }
+
+    return () => {
+      if (videoId && isValidUUID(videoId) && currentTimeRef.current > 0) {
+        apiClient.post(`/api/videos/${videoId}/history`, {
+          lastPositionSeconds: Math.floor(currentTimeRef.current),
+          completed: false
+        }).catch(() => {});
+      }
+    };
   }, [videoId]);
 
   const handleProcessVideo = async (e) => {
@@ -165,8 +186,8 @@ const LessonScreen = () => {
     try {
       const res = await apiClient.post('/api/videos/process', {
         youtubeUrl: importUrl.trim(),
-        targetLanguage: 'vi',
-        originalLanguage: 'en'
+        targetLanguage: user?.nativeLanguage || 'vi',
+        originalLanguage: user?.targetLanguage || 'en'
       });
       if (res.data?.id) {
         setImportUrl('');
@@ -360,13 +381,22 @@ const LessonScreen = () => {
       <div className="min-h-screen bg-[#F7F3EA] text-[#25231F] font-['Plus_Jakarta_Sans',sans-serif] -m-6 sm:-m-8 p-6 sm:p-10">
         <div className="max-w-[1120px] mx-auto w-full space-y-8">
           
-          <header>
-            <h1 className="text-2xl sm:text-[28px] font-bold text-[#25231F] tracking-tight">
-              Lessons & Video Library
-            </h1>
-            <p className="text-xs sm:text-[13px] text-[#777168] mt-1">
-              Học tiếng Anh qua video phụ đề song ngữ đồng bộ thời gian thực
-            </p>
+          <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-[28px] font-bold text-[#25231F] tracking-tight">
+                Lessons & Video Library
+              </h1>
+              <p className="text-xs sm:text-[13px] text-[#777168] mt-1">
+                Học ngoại ngữ qua video phụ đề song ngữ đồng bộ thời gian thực
+              </p>
+            </div>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-[5px] bg-[#A67C52] hover:bg-[#79542E] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs shrink-0 self-start sm:self-auto"
+            >
+              <FiPlus className="w-4 h-4" />
+              <span>Thêm video bài học</span>
+            </button>
           </header>
 
           <div className="bg-[#FFFDF8] border border-[#DED8CC] rounded-[5px] p-6 shadow-xs">
@@ -374,9 +404,17 @@ const LessonScreen = () => {
               <FiLink className="w-4 h-4 text-[#A67C52]" />
               <span>Thêm video bài học từ YouTube</span>
             </h2>
-            <p className="text-xs text-[#777168] mb-4">
-              Dán liên kết video YouTube bất kỳ để hệ thống tạo phụ đề song ngữ
-            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-4">
+              <p className="text-xs text-[#777168]">
+                Dán liên kết video YouTube bất kỳ để hệ thống tạo phụ đề song ngữ
+              </p>
+              <div className="flex items-center gap-1.5 text-[11px] font-medium text-[#79542E] bg-[#FAF6EE] border border-[#DED8CC] px-2.5 py-1 rounded-[4px] self-start sm:self-auto">
+                <span>Dịch sang:</span>
+                <span className="font-bold">
+                  {user?.nativeLanguage === 'en' ? '🇬🇧 English' : '🇻🇳 Tiếng Việt'}
+                </span>
+              </div>
+            </div>
 
             <form onSubmit={handleProcessVideo} className="flex flex-col sm:flex-row gap-3">
               <input
@@ -480,6 +518,14 @@ const LessonScreen = () => {
           </div>
 
         </div>
+
+        <CreateVideoModal 
+          isOpen={showCreateModal} 
+          onClose={() => {
+            setShowCreateModal(false);
+            fetchHistory();
+          }} 
+        />
       </div>
     );
   }
@@ -531,17 +577,27 @@ const LessonScreen = () => {
     <div className="min-h-screen bg-[#F7F3EA] text-[#25231F] font-['Plus_Jakarta_Sans',sans-serif] -m-6 sm:-m-8 p-6 sm:p-10 select-none">
       <div className="max-w-[1120px] mx-auto w-full">
         
-        <header className="mb-6">
+        <header className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <button
+              onClick={() => navigate('/lessons')}
+              className="inline-flex items-center gap-1.5 text-xs text-[#777168] hover:text-[#25231F] mb-2 transition-colors cursor-pointer"
+            >
+              <FiArrowLeft className="w-3.5 h-3.5" />
+              <span>Tất cả bài học</span>
+            </button>
+            <h1 className="text-2xl sm:text-[28px] font-bold text-[#25231F] tracking-tight leading-tight">
+              {videoData.title || 'Video Lesson'}
+            </h1>
+          </div>
+
           <button
-            onClick={() => navigate('/lessons')}
-            className="inline-flex items-center gap-1.5 text-xs text-[#777168] hover:text-[#25231F] mb-3 transition-colors cursor-pointer"
+            onClick={() => setShowAddToPlaylistModal(true)}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-[5px] border border-[#DED8CC] bg-[#FFFDF8] hover:bg-[#F4EDE1] text-[#79542E] text-xs font-semibold transition-colors cursor-pointer shadow-2xs self-start sm:self-auto shrink-0"
           >
-            <FiArrowLeft className="w-3.5 h-3.5" />
-            <span>Tất cả bài học</span>
+            <MdOutlineQueueMusic className="w-4 h-4" />
+            <span>Lưu vào Playlist</span>
           </button>
-          <h1 className="text-2xl sm:text-[28px] font-bold text-[#25231F] tracking-tight leading-tight">
-            {videoData.title || 'Video Lesson'}
-          </h1>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8 items-start">
@@ -782,25 +838,11 @@ const LessonScreen = () => {
 
           <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 shrink-0">
             <button 
-              onClick={() => setIsBookmarked(!isBookmarked)}
-              className={`flex items-center justify-center gap-2 px-3.5 py-2 border rounded-[5px] text-xs font-semibold transition-colors cursor-pointer min-h-[38px] ${
-                isBookmarked 
-                  ? 'bg-[#EFE9DD] border-[#A67C52] text-[#79542E]' 
-                  : 'border-[#DED8CC] bg-[#FFFDF8] text-[#25231F] hover:bg-[#EFE9DD]'
-              }`}
+              onClick={() => setShowAddToPlaylistModal(true)}
+              className="flex items-center justify-center gap-2 px-3.5 py-2 border border-[#DED8CC] bg-[#FFFDF8] hover:bg-[#EFE9DD] text-[#25231F] rounded-[5px] text-xs font-semibold transition-colors cursor-pointer min-h-[38px]"
             >
-              <FiBookmark className={`w-3.5 h-3.5 ${isBookmarked ? 'fill-[#79542E]' : ''}`} />
-              <span>{isBookmarked ? 'Saved' : 'Bookmark'}</span>
-            </button>
-
-            <button 
-              onClick={() => setIsCompleted(!isCompleted)}
-              className={`flex items-center justify-center gap-2 px-4 py-2 rounded-[5px] text-xs font-semibold text-white transition-colors cursor-pointer min-h-[38px] ${
-                isCompleted ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-[#A67C52] hover:bg-[#79542E]'
-              }`}
-            >
-              <FiCheckCircle className="w-3.5 h-3.5" />
-              <span>{isCompleted ? 'Completed' : 'Mark as Completed'}</span>
+              <MdOutlineQueueMusic className="w-4 h-4 text-[#A67C52]" />
+              <span>Lưu vào Playlist</span>
             </button>
           </div>
         </div>
@@ -854,6 +896,13 @@ const LessonScreen = () => {
           </button>
         </div>
       )}
+
+      <AddToPlaylistModal
+        isOpen={showAddToPlaylistModal}
+        onClose={() => setShowAddToPlaylistModal(false)}
+        videoId={videoId}
+        videoTitle={videoData?.title}
+      />
     </div>
   );
 };

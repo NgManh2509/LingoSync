@@ -43,6 +43,20 @@ export const AuthProvider = ({ children }) => {
         window.location.href = '/login';
     };
 
+    const updateLanguagePreference = async (targetLanguage, nativeLanguage = 'vi') => {
+        try {
+            const res = await apiClient.put('/api/users/preferences', {
+                targetLanguage,
+                nativeLanguage
+            });
+            setUser(res.data);
+            return res.data;
+        } catch (err) {
+            console.error('Lỗi khi cập nhật ngôn ngữ:', err);
+            throw err;
+        }
+    };
+
     return (
         <AuthContext.Provider
             value={{
@@ -52,6 +66,7 @@ export const AuthProvider = ({ children }) => {
                 loginWithToken,
                 logout,
                 refreshUser: fetchUserProfile,
+                updateLanguagePreference,
             }}
         >
             {children}
