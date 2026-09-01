@@ -52,4 +52,11 @@ public class Users {
     @Column(name = "updated_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
     @UpdateTimestamp
     private OffsetDateTime updatedAt;
+
+    @Column(name = "target_language", length = 10)
+    private String targetLanguage;
+
+    @Column(name = "native_language", length = 10)
+    @Builder.Default
+    private String nativeLanguage = "vi";
 }

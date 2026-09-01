@@ -13,5 +13,6 @@ import lombok.NoArgsConstructor;
 public class WorkerResponse {
     private String source;
     private String title;
+    private Integer duration;
     private List<WorkerSubtitleItem> data;
 }

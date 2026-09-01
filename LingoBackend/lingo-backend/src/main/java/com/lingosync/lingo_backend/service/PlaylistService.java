@@ -24,6 +24,7 @@ import com.lingosync.lingo_backend.repository.PlaylistRepository;
 import com.lingosync.lingo_backend.repository.PlaylistVideoRepository;
 import com.lingosync.lingo_backend.repository.UserRepository;
 import com.lingosync.lingo_backend.repository.VideoRepository;
+import com.lingosync.lingo_backend.util.LanguageUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -138,6 +139,17 @@ public class PlaylistService {
 
         playlistVideoRepository.deleteById_PlaylistIdAndId_VideoId(playlistId, videoId);
 
+    }
+
+    @Transactional
+    public void createStaterPlaylistForLanguage(Users user, String targetLang) {
+        LanguageUtils.LanguageInfo langInfo = LanguageUtils.getLanguageInfo(targetLang);
+
+        if (playlistRepository.findByUser_IdAndName(user.getId(), langInfo.getStarterPlaylistName()).isEmpty()) {
+            Playlist starter = Playlist.builder().user(user).name(langInfo.getStarterPlaylistName())
+                    .description(langInfo.getStarterPlaylistDescription()).build();
+            playlistRepository.save(starter);
+        }
     }
 
 }

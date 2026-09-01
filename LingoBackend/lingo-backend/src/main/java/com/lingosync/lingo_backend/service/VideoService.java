@@ -97,6 +97,23 @@ public class VideoService {
                 return List.of();
         }
 
+        private int parseTimeStringToSeconds(String timeStr) {
+                if (timeStr == null || timeStr.isBlank()) return 0;
+                try {
+                        String clean = timeStr.trim().replace(",", ".");
+                        String[] parts = clean.split(":");
+                        if (parts.length == 3) {
+                                return (int) (Double.parseDouble(parts[0]) * 3600 + Double.parseDouble(parts[1]) * 60 + Double.parseDouble(parts[2]));
+                        }
+                        if (parts.length == 2) {
+                                return (int) (Double.parseDouble(parts[0]) * 60 + Double.parseDouble(parts[1]));
+                        }
+                        return (int) Double.parseDouble(clean);
+                } catch (Exception e) {
+                        return 0;
+                }
+        }
+
         public VideoDetailResponse processVideo(ProcessVideoRequest request, String userEmail) {
                 String youtubeId = extractYoutubeId(request.getYoutubeUrl());
 
@@ -112,6 +129,7 @@ public class VideoService {
                                                 .youtubeId(video.getYoutubeId())
                                                 .title(video.getTitle())
                                                 .scriptUrl(video.getScriptUrl())
+                                                .durationSeconds(video.getDurationSeconds())
                                                 .status(video.getStatus())
                                                 .subtitles(subs)
                                                 .build();
@@ -148,6 +166,12 @@ public class VideoService {
                         if (workerRes.getTitle() != null && !workerRes.getTitle().isBlank()) {
                                 videoToProcess.setTitle(workerRes.getTitle());
                         }
+                        if (workerRes.getDuration() != null && workerRes.getDuration() > 0) {
+                                videoToProcess.setDurationSeconds(workerRes.getDuration());
+                        } else if (workerRes.getData() != null && !workerRes.getData().isEmpty()) {
+                                WorkerSubtitleItem lastItem = workerRes.getData().get(workerRes.getData().size() - 1);
+                                videoToProcess.setDurationSeconds(parseTimeStringToSeconds(lastItem.getTime()) + 5);
+                        }
                         if (videoToProcess.getThumbnailUrl() == null) {
                                 videoToProcess.setThumbnailUrl("https://img.youtube.com/vi/" + youtubeId + "/hqdefault.jpg");
                         }
@@ -159,6 +183,7 @@ public class VideoService {
                                         .title(videoToProcess.getTitle())
                                         .status(videoToProcess.getStatus())
                                         .scriptUrl(scriptUrl)
+                                        .durationSeconds(videoToProcess.getDurationSeconds())
                                         .subtitles(workerRes != null ? workerRes.getData() : null)
                                         .build();
                 } catch (Exception e) {
@@ -177,6 +202,7 @@ public class VideoService {
                                 .youtubeId(video.getYoutubeId())
                                 .title(video.getTitle())
                                 .scriptUrl(video.getScriptUrl())
+                                .durationSeconds(video.getDurationSeconds())
                                 .status(video.getStatus())
                                 .subtitles(subs)
                                 .build();

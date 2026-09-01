@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.lingosync.lingo_backend.dto.AchievementResponse;
+import com.lingosync.lingo_backend.dto.UpdateLanguagePreferenceRequest;
 import com.lingosync.lingo_backend.dto.UserProfileResponse;
 import com.lingosync.lingo_backend.entity.Achievements;
 import com.lingosync.lingo_backend.entity.UserAchievement;
@@ -24,10 +25,15 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class UserService {
+    private final PlaylistService playlistService;
     private final UserRepository userRepository;
     private final AchievementRepository achievementRepository;
     private final UserAchievementRepository userAchievementRepository;
     private final StudyLogRepository studyLogRepository;
+
+    UserService(PlaylistService playlistService) {
+        this.playlistService = playlistService;
+    }
 
     private Users findUserByEmail(String email) {
         return userRepository.findByEmail(email)
@@ -71,6 +77,18 @@ public class UserService {
             case "VIDEOS_WATCHED", "VIDEO_COUNT" -> videosWatched;
             default -> 0;
         };
+    }
+
+    @Transactional
+    public UserProfileResponse updateLanguagePreference(String email, UpdateLanguagePreferenceRequest req) {
+        Users user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("Không tìm thấy người dùng có email : " + email));
+        user.setTargetLanguage(req.getTargetLanguage());
+        user.setNativeLanguage(req.getNativeLanguage() != null ? req.getNativeLanguage() : "vi");
+        Users savedUser = userRepository.save(user);
+
+        playlistService.createStaterPlaylistForLanguage(savedUser, req.getTargetLanguage());
+        return UserProfileResponse.from(savedUser);
     }
 
 }

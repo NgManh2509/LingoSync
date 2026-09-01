@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.lingosync.lingo_backend.dto.AchievementResponse;
+import com.lingosync.lingo_backend.dto.UpdateLanguagePreferenceRequest;
 import com.lingosync.lingo_backend.dto.UserProfileResponse;
 import com.lingosync.lingo_backend.service.UserService;
 
@@ -14,6 +15,8 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @RequestMapping("/api/users")
@@ -33,6 +36,14 @@ public class UserController {
         String email = authentication.getName();
         List<AchievementResponse> res = userService.getAchievements(email);
         return ResponseEntity.ok(res);
+    }
+
+    @PutMapping("/preferences")
+    public ResponseEntity<UserProfileResponse> updatePreferences(Authentication authentication,
+            @RequestBody UpdateLanguagePreferenceRequest req) {
+        String email = authentication.getName();
+
+        return ResponseEntity.ok(userService.updateLanguagePreference(email, req));
     }
 
 }
