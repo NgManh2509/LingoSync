@@ -22,7 +22,8 @@ async def getSub(req: VideoSubtitle):
             "source": "youtube_native", 
             "data": translated_res, 
             "title": yt_res.get("title", ""),
-            "duration": yt_res.get("duration", 0)
+            "duration": yt_res.get("duration", 0),
+            "language": yt_res.get("language") or req.lang or "en"
         }
     audio_res = downloadAudio(req.url)
     if audio_res["status"] != "success":
@@ -48,11 +49,14 @@ async def getSub(req: VideoSubtitle):
         channel=video_channel
     )
 
+    detected_lang = model_res.get("language") or req.lang or "en"
+
     return {
         "source": "cleaned_whisper", 
         "data": translated, 
         "title": video_title,
-        "duration": video_duration
+        "duration": video_duration,
+        "language": detected_lang
     }
 
 @router.post("/subtitle-list")

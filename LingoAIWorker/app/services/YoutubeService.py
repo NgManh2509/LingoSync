@@ -11,28 +11,67 @@ def saveOriginalSub(data, folder_path: str = "subtitles", video_id: str = "origi
    return file_path
         
 def getYoutubeSubtitle(url: str, lang: str = "en"):
-    ydl_opts = {
+    probe_opts = {
         'skip_download': True,
-        'writesubtitles': True,
-        'writeautomaticsub': True,
-        'subtitleslangs': [lang],
-        'subtitlesformat': 'srt',
-        'outtmpl': '%(id)s.%(ext)s',
-        'quiet': True
+        'quiet': True,
+        'no_warnings': True
     }
 
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-            video_id = info["id"]
-            filenameSrt = f"{video_id}.{lang}.srt"
-            filenameVTT = f"{video_id}.{lang}.vtt"
-            filename = filenameSrt if os.path.exists(filenameSrt) else filenameVTT if os.path.exists(filenameVTT) else None
+        with yt_dlp.YoutubeDL(probe_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            if not info:
+                return {"status": "error", "message": "Không tìm thấy thông tin video."}
 
+            video_id = info["id"]
             title = info.get("title", "")
             tags = info.get("tags") or []
             tags_str = ", ".join(tags[:20])
             duration = int(info.get("duration") or 0)
+            channel = info.get("uploader") or info.get("channel") or ""
+
+            manual_subs = list((info.get("subtitles") or {}).keys())
+            auto_subs = list((info.get("automatic_captions") or {}).keys())
+
+            chosen_lang = None
+            is_auto = False
+
+            if lang and lang in manual_subs:
+                chosen_lang = lang
+            elif lang and lang in auto_subs:
+                chosen_lang = lang
+                is_auto = True
+            elif "en" in manual_subs:
+                chosen_lang = "en"
+            elif "en" in auto_subs:
+                chosen_lang = "en"
+                is_auto = True
+            elif manual_subs:
+                chosen_lang = manual_subs[0]
+            elif auto_subs:
+                chosen_lang = auto_subs[0]
+                is_auto = True
+
+            if not chosen_lang:
+                return {"status": "error", "message": "Không có phụ đề khả dụng trên YouTube."}
+
+        dl_opts = {
+            'skip_download': True,
+            'writesubtitles': not is_auto,
+            'writeautomaticsub': is_auto,
+            'subtitleslangs': [chosen_lang],
+            'subtitlesformat': 'srt',
+            'outtmpl': '%(id)s.%(ext)s',
+            'quiet': True,
+            'no_warnings': True
+        }
+
+        with yt_dlp.YoutubeDL(dl_opts) as ydl:
+            ydl.extract_info(url, download=True)
+
+        filenameSrt = f"{video_id}.{chosen_lang}.srt"
+        filenameVTT = f"{video_id}.{chosen_lang}.vtt"
+        filename = filenameSrt if os.path.exists(filenameSrt) else filenameVTT if os.path.exists(filenameVTT) else None
 
         if filename:
             with open(filename, "r", encoding="utf-8") as f:
@@ -51,7 +90,10 @@ def getYoutubeSubtitle(url: str, lang: str = "en"):
                     "time": time_str[:8],
                     "text": clean_text
                 })
-            os.remove(filename)
+            try:
+                os.remove(filename)
+            except:
+                pass
             saveOriginalSub(json_data, folder_path="original/subtitles", video_id=video_id)
             return {
                 "status": "success",
@@ -59,15 +101,15 @@ def getYoutubeSubtitle(url: str, lang: str = "en"):
                 "title": title,
                 "duration": duration,
                 "tags": tags_str,
-                "channel": channel
+                "channel": channel,
+                "language": chosen_lang
             }
         else:
-            return {"status": "error", "message": "Không tìm thấy file phụ đề."}
+            return {"status": "error", "message": "Không tìm thấy file phụ đề sau khi tải."}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
 def downloadAudio(url: str):
-
     ydl_opts = {
         'format': 'bestaudio/best',
         'outtmpl': '%(id)s.%(ext)s',
@@ -78,6 +120,11 @@ def downloadAudio(url: str):
         }],
         'noplaylist': True,
         'ignoreerrors': True,
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['android', 'web']
+            }
+        },
         'quiet': False
     }
     try:
