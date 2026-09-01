@@ -18,12 +18,18 @@ async def getSub(req: VideoSubtitle):
             video_tags=yt_res.get("tags", ""),
             channel=yt_res.get("channel", "")
         )
-        return {"source": "youtube_native", "data": translated_res, "title": yt_res.get("title", "")}
+        return {
+            "source": "youtube_native", 
+            "data": translated_res, 
+            "title": yt_res.get("title", ""),
+            "duration": yt_res.get("duration", 0)
+        }
     audio_res = downloadAudio(req.url)
     if audio_res["status"] != "success":
         raise HTTPException(status_code=400, detail="Không thể tải video/audio từ URL này.")
 
     video_title = audio_res.get("initial_prompt", "")
+    video_duration = audio_res.get("duration", 0)
     video_tags  = audio_res.get("tags", "")
     video_channel = audio_res.get("channel", "")
     whisper_prompt = f"{video_title}. {video_tags}".strip(". ")
@@ -42,7 +48,12 @@ async def getSub(req: VideoSubtitle):
         channel=video_channel
     )
 
-    return {"source": "cleaned_whisper", "data": translated, "title": video_title}
+    return {
+        "source": "cleaned_whisper", 
+        "data": translated, 
+        "title": video_title,
+        "duration": video_duration
+    }
 
 @router.post("/subtitle-list")
 async def list_subtitles_endpoint(req: VideoUrlRequest):

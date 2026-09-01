@@ -32,7 +32,7 @@ def getYoutubeSubtitle(url: str, lang: str = "en"):
             title = info.get("title", "")
             tags = info.get("tags") or []
             tags_str = ", ".join(tags[:20])
-            channel = info.get("uploader") or info.get("channel") or ""
+            duration = int(info.get("duration") or 0)
 
         if filename:
             with open(filename, "r", encoding="utf-8") as f:
@@ -57,6 +57,7 @@ def getYoutubeSubtitle(url: str, lang: str = "en"):
                 "status": "success",
                 "data": json_data,
                 "title": title,
+                "duration": duration,
                 "tags": tags_str,
                 "channel": channel
             }
@@ -84,6 +85,7 @@ def downloadAudio(url: str):
             info = ydl.extract_info(url, download=True)
             video_id = info["id"]
             title = info.get("title", "")
+            duration = int(info.get("duration") or 0)
             tags = info.get("tags") or []
             tags_str = ", ".join(tags[:20])
             channel = info.get("uploader") or info.get("channel") or ""
@@ -92,6 +94,7 @@ def downloadAudio(url: str):
                 "status": "success",
                 "file_path": f"{video_id}.mp3",
                 "initial_prompt": title,
+                "duration": duration,
                 "tags": tags_str,
                 "channel": channel
             }
