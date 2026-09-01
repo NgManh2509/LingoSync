@@ -130,7 +130,14 @@ const LessonScreen = () => {
     try {
       const res = await apiClient.get('/api/videos/history');
       if (res.data && Array.isArray(res.data)) {
-        setHistoryList(res.data);
+        const enriched = res.data.map(item => {
+          const thumb = item.thumbnailUrl || (item.youtubeId ? `https://img.youtube.com/vi/${item.youtubeId}/hqdefault.jpg` : null);
+          return {
+            ...item,
+            thumbnailUrl: thumb
+          };
+        });
+        setHistoryList(enriched);
       }
     } catch {
       setHistoryList([]);
@@ -378,7 +385,7 @@ const LessonScreen = () => {
                 value={importUrl}
                 onChange={(e) => setImportUrl(e.target.value)}
                 placeholder="https://www.youtube.com/watch?v=..."
-                className="flex-1 text-xs bg-white border border-[#DED8CC] rounded-[5px] px-3.5 py-2.5 text-[#25231F] placeholder-[#777168]/60 focus:outline-none focus:border-[#A67C52]"
+                className="flex-1 text-xs bg-[#FFF9ED] border border-[#DED8CC] rounded-[5px] px-3.5 py-2.5 text-[#25231F] placeholder-[#777168]/60 focus:outline-none focus:bg-[#FFFDF8] focus:border-[#A67C52] transition-colors"
               />
               <button
                 type="submit"
@@ -426,42 +433,48 @@ const LessonScreen = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {historyList.map((item) => (
-                  <div
-                    key={item.id}
-                    onClick={() => navigate(`/lessons/${item.videoId}`)}
-                    className="bg-[#FFFDF8] border border-[#DED8CC] hover:border-[#A67C52] rounded-[5px] overflow-hidden group cursor-pointer transition-all shadow-xs"
-                  >
-                    <div className="aspect-video bg-zinc-900 relative overflow-hidden">
-                      {item.thumbnailUrl ? (
-                        <img 
-                          src={item.thumbnailUrl} 
-                          alt={item.title} 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-zinc-600">
-                          <FiPlay className="w-8 h-8" />
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors" />
-                    </div>
+                {historyList.map((item) => {
+                  const thumbSrc = item.thumbnailUrl || (item.youtubeId ? `https://img.youtube.com/vi/${item.youtubeId}/hqdefault.jpg` : null);
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => navigate(`/lessons/${item.videoId}`)}
+                      className="bg-[#FFFDF8] border border-[#DED8CC] hover:border-[#A67C52] rounded-[5px] overflow-hidden group cursor-pointer transition-all shadow-xs"
+                    >
+                      <div className="aspect-video bg-[#25231F] relative overflow-hidden flex items-center justify-center">
+                        {thumbSrc ? (
+                          <img 
+                            src={thumbSrc} 
+                            alt={item.title || 'Video Thumbnail'} 
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-[#A67C52]">
+                            <FiPlay className="w-8 h-8" />
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors" />
+                      </div>
 
-                    <div className="p-4">
-                      <h3 className="text-xs font-bold text-[#25231F] line-clamp-2 mb-2 group-hover:text-[#79542E] transition-colors">
-                        {item.title || 'Video bài học'}
-                      </h3>
-                      
-                      <div className="flex items-center justify-between text-[11px] text-[#777168]">
-                        <span className="flex items-center gap-1">
-                          <FiClock className="w-3 h-3 text-[#A67C52]" />
-                          {item.durationSeconds ? formatTime(item.durationSeconds) : '--:--'}
-                        </span>
-                        <span className="font-medium text-[#79542E]">Học tiếp →</span>
+                      <div className="p-4">
+                        <h3 className="text-xs font-bold text-[#25231F] line-clamp-2 mb-2 group-hover:text-[#79542E] transition-colors">
+                          {item.title || 'Video bài học'}
+                        </h3>
+                        
+                        <div className="flex items-center justify-between text-[11px] text-[#777168]">
+                          <span className="flex items-center gap-1">
+                            <FiClock className="w-3 h-3 text-[#A67C52]" />
+                            {item.durationSeconds ? formatTime(item.durationSeconds) : '--:--'}
+                          </span>
+                          <span className="font-medium text-[#79542E]">Học tiếp →</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
