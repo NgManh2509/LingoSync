@@ -40,10 +40,14 @@ public class PlaylistService {
         return userRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException("Khong tim thay user"));
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<PlaylistSummaryResponse> getUserPlaylists(String userEmail) {
         Users user = findByEmail(userEmail);
         List<Playlist> playlists = playlistRepository.findByUser_IdOrderByCreatedAtDesc(user.getId());
+        if (playlists.isEmpty() && user.getTargetLanguage() != null && !user.getTargetLanguage().isBlank()) {
+            createStaterPlaylistForLanguage(user, user.getTargetLanguage());
+            playlists = playlistRepository.findByUser_IdOrderByCreatedAtDesc(user.getId());
+        }
         return playlists.stream().map(
                 playlist -> {
                     int totalVideos = playlistVideoRepository.countById_PlaylistId(playlist.getId());

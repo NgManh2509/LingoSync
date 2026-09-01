@@ -19,6 +19,7 @@ public class VideoDetailResponse {
     private String scriptUrl;
     private String status;
     private Integer durationSeconds;
+    private String originalLanguage;
+    private String targetLanguage;
     private List<WorkerSubtitleItem> subtitles;
-
 }

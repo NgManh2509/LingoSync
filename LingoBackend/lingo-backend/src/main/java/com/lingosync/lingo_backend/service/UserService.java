@@ -31,10 +31,6 @@ public class UserService {
     private final UserAchievementRepository userAchievementRepository;
     private final StudyLogRepository studyLogRepository;
 
-    UserService(PlaylistService playlistService) {
-        this.playlistService = playlistService;
-    }
-
     private Users findUserByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("Không tìm thấy người dùng"));

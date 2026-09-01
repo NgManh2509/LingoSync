@@ -26,6 +26,8 @@ public class UserProfileResponse {
     private Integer streakCount;
     private LocalDate lastActivityDate;
     private Boolean isStudiedToday;
+    private String targetLanguage;
+    private String nativeLanguage;
 
     public static UserProfileResponse from(Users user) {
         int xp = user.getXpPoints() != null ? user.getXpPoints() : 0;
@@ -43,6 +45,8 @@ public class UserProfileResponse {
                 .streakCount(user.getStreakCount() != null ? user.getStreakCount() : 0)
                 .lastActivityDate(user.getLastActivityDate())
                 .isStudiedToday(studiedToday)
+                .targetLanguage(user.getTargetLanguage())
+                .nativeLanguage(user.getNativeLanguage())
                 .build();
     }
 

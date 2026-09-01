@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.time.OffsetDateTime;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -98,12 +99,14 @@ public class VideoService {
         }
 
         private int parseTimeStringToSeconds(String timeStr) {
-                if (timeStr == null || timeStr.isBlank()) return 0;
+                if (timeStr == null || timeStr.isBlank())
+                        return 0;
                 try {
                         String clean = timeStr.trim().replace(",", ".");
                         String[] parts = clean.split(":");
                         if (parts.length == 3) {
-                                return (int) (Double.parseDouble(parts[0]) * 3600 + Double.parseDouble(parts[1]) * 60 + Double.parseDouble(parts[2]));
+                                return (int) (Double.parseDouble(parts[0]) * 3600 + Double.parseDouble(parts[1]) * 60
+                                                + Double.parseDouble(parts[2]));
                         }
                         if (parts.length == 2) {
                                 return (int) (Double.parseDouble(parts[0]) * 60 + Double.parseDouble(parts[1]));
@@ -130,6 +133,8 @@ public class VideoService {
                                                 .title(video.getTitle())
                                                 .scriptUrl(video.getScriptUrl())
                                                 .durationSeconds(video.getDurationSeconds())
+                                                .originalLanguage(video.getOriginalLanguage())
+                                                .targetLanguage(video.getTargetLanguage())
                                                 .status(video.getStatus())
                                                 .subtitles(subs)
                                                 .build();
@@ -144,7 +149,8 @@ public class VideoService {
                         Videos newVideos = Videos.builder().user(user).youtubeId(youtubeId)
                                         .title("YouTube Lesson (" + youtubeId + ")")
                                         .thumbnailUrl("https://img.youtube.com/vi/" + youtubeId + "/hqdefault.jpg")
-                                        .originalLanguage(request.getOriginalLanguage() != null ? request.getOriginalLanguage()
+                                        .originalLanguage(request.getOriginalLanguage() != null
+                                                        ? request.getOriginalLanguage()
                                                         : "en")
                                         .targetLanguage(request.getTargetLanguage()).status("PENDING").build();
 
@@ -156,7 +162,8 @@ public class VideoService {
                                 .tgt_lang(request.getTargetLanguage()).build();
 
                 try {
-                        WorkerResponse workerRes = restClient.post().uri("/api/video/get_subtitles").body(workerReq).retrieve()
+                        WorkerResponse workerRes = restClient.post().uri("/api/video/get_subtitles").body(workerReq)
+                                        .retrieve()
                                         .body(WorkerResponse.class);
 
                         String scriptUrl = uploadScript(videoToProcess.getId(), workerRes.getData());
@@ -166,6 +173,9 @@ public class VideoService {
                         if (workerRes.getTitle() != null && !workerRes.getTitle().isBlank()) {
                                 videoToProcess.setTitle(workerRes.getTitle());
                         }
+                        if (workerRes.getLanguage() != null && !workerRes.getLanguage().isBlank()) {
+                                videoToProcess.setOriginalLanguage(workerRes.getLanguage());
+                        }
                         if (workerRes.getDuration() != null && workerRes.getDuration() > 0) {
                                 videoToProcess.setDurationSeconds(workerRes.getDuration());
                         } else if (workerRes.getData() != null && !workerRes.getData().isEmpty()) {
@@ -173,7 +183,8 @@ public class VideoService {
                                 videoToProcess.setDurationSeconds(parseTimeStringToSeconds(lastItem.getTime()) + 5);
                         }
                         if (videoToProcess.getThumbnailUrl() == null) {
-                                videoToProcess.setThumbnailUrl("https://img.youtube.com/vi/" + youtubeId + "/hqdefault.jpg");
+                                videoToProcess.setThumbnailUrl(
+                                                "https://img.youtube.com/vi/" + youtubeId + "/hqdefault.jpg");
                         }
                         videoRepository.save(videoToProcess);
 
@@ -184,6 +195,8 @@ public class VideoService {
                                         .status(videoToProcess.getStatus())
                                         .scriptUrl(scriptUrl)
                                         .durationSeconds(videoToProcess.getDurationSeconds())
+                                        .originalLanguage(videoToProcess.getOriginalLanguage())
+                                        .targetLanguage(videoToProcess.getTargetLanguage())
                                         .subtitles(workerRes != null ? workerRes.getData() : null)
                                         .build();
                 } catch (Exception e) {
@@ -203,6 +216,8 @@ public class VideoService {
                                 .title(video.getTitle())
                                 .scriptUrl(video.getScriptUrl())
                                 .durationSeconds(video.getDurationSeconds())
+                                .originalLanguage(video.getOriginalLanguage())
+                                .targetLanguage(video.getTargetLanguage())
                                 .status(video.getStatus())
                                 .subtitles(subs)
                                 .build();
@@ -219,14 +234,20 @@ public class VideoService {
 
                 VideoHistory history = videoHistoryRepository.findByUser_IdAndVideo_Id(user.getId(), video.getId())
                                 .map(existing -> {
-                                        existing.setLastPositionSeconds(req.getLastPositionSeconds());
-                                        existing.setWatchCount(existing.getWatchCount() + 1);
+                                        if (req.getLastPositionSeconds() != null && req.getLastPositionSeconds() > 0) {
+                                                existing.setLastPositionSeconds(req.getLastPositionSeconds());
+                                        }
+                                        existing.setWatchedAt(OffsetDateTime.now());
                                         return existing;
                                 })
                                 .orElseGet(() -> {
                                         isNewHistory[0] = true;
                                         return VideoHistory.builder().user(user).video(video)
-                                                        .lastPositionSeconds(req.getLastPositionSeconds()).watchCount(1)
+                                                        .lastPositionSeconds(req.getLastPositionSeconds() != null
+                                                                        ? req.getLastPositionSeconds()
+                                                                        : 0)
+                                                        .watchCount(1)
+                                                        .watchedAt(OffsetDateTime.now())
                                                         .build();
                                 });
                 history = videoHistoryRepository.save(history);
