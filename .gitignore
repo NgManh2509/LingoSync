@@ -32,7 +32,8 @@ desktop.ini
 **/dist/
 
 
-**/models/
+LingoAIWorker/models/
+!**/app/models/
 **/*.bin
 **/*.pt
 **/*.ckpt

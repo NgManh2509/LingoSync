@@ -20,7 +20,7 @@ ENV/
 .env.*
 !.env.example
 
-models/
+/models/
 *.bin
 *.pt
 *.ckpt
