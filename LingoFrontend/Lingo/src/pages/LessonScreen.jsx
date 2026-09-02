@@ -63,6 +63,21 @@ const LessonScreen = () => {
 
   const transcriptScrollRef = useRef(null);
   const activeLineRef = useRef(null);
+  const popoverRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target)) {
+        setSelectedWord(null);
+      }
+    };
+    if (selectedWord) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [selectedWord]);
 
   const parseTime = (timeVal) => {
     if (timeVal === null || timeVal === undefined) return 0;
@@ -334,36 +349,110 @@ const LessonScreen = () => {
     }
   };
 
-  const handleWordClick = (e, word, fullSentence) => {
+  const speakWord = (text, lang) => {
+    if (!('speechSynthesis' in window) || !text) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    const langMap = {
+      en: 'en-US',
+      de: 'de-DE',
+      fr: 'fr-FR',
+      es: 'es-ES',
+      zh: 'zh-CN',
+      ja: 'ja-JP',
+      ko: 'ko-KR'
+    };
+    utterance.lang = langMap[lang] || 'en-US';
+    utterance.rate = 0.9;
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const handleWordClick = async (e, rawWord, fullSentence, translatedSentence = '') => {
     e.stopPropagation();
-    const cleanWord = word.replace(/[^a-zA-Z0-9'-]/g, '');
+    const cleanWord = rawWord.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"'“”‘’…\[\]]/gu, '').trim();
     if (!cleanWord) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
-    setPopoverPos({
-      x: Math.min(rect.left, window.innerWidth - 300),
-      y: rect.bottom + window.scrollY + 8
-    });
+    const popoverWidth = 320;
+    let x = rect.left;
+    if (x + popoverWidth > window.innerWidth - 16) {
+      x = window.innerWidth - popoverWidth - 16;
+    }
+    if (x < 16) x = 16;
+    const y = rect.bottom + window.scrollY + 8;
+
+    setPopoverPos({ x, y });
+    setWordSaved(false);
+
+    const sourceLang = videoData?.originalLanguage || 'en';
+    const targetLang = user?.nativeLanguage || 'vi';
 
     setSelectedWord({
       word: cleanWord,
+      baseWord: cleanWord,
+      phonetic: '',
+      meaning: '',
+      sourceLang,
+      targetLang,
       context: fullSentence,
-      meaning: "Từ vựng trong câu: " + fullSentence
+      translatedContext: translatedSentence || '',
+      loading: true,
+      error: null
     });
-    setWordSaved(false);
+
+    speakWord(cleanWord, sourceLang);
+
+    try {
+      const res = await apiClient.get('/api/vocabulary/lookup', {
+        params: {
+          word: cleanWord,
+          sourceLang: sourceLang,
+          targetLang: targetLang
+        },
+        timeout: 8000
+      });
+
+      setSelectedWord(prev => {
+        if (!prev || prev.word !== cleanWord) return prev;
+        return {
+          ...prev,
+          baseWord: res.data.base_word || cleanWord,
+          phonetic: res.data.phonetic || '',
+          meaning: res.data.meaning || '',
+          loading: false
+        };
+      });
+    } catch (err) {
+      console.error('Word lookup failed:', err);
+      setSelectedWord(prev => {
+        if (!prev || prev.word !== cleanWord) return prev;
+        return {
+          ...prev,
+          loading: false,
+          meaning: '',
+          error: 'Không thể tải định nghĩa'
+        };
+      });
+    }
   };
 
   const handleSaveWord = async () => {
     if (!selectedWord || isSavingWord || wordSaved) return;
     setIsSavingWord(true);
     try {
-      await apiClient.post('/api/vocabulary', {
-        word: selectedWord.word,
-        contextSentence: selectedWord.context,
-        translation: selectedWord.meaning
+      await apiClient.post('/api/vocabulary/save', {
+        word: selectedWord.baseWord || selectedWord.word,
+        phonetic: selectedWord.phonetic || '',
+        definition: selectedWord.meaning || '',
+        sourceLanguage: selectedWord.sourceLang || 'en',
+        targetLanguage: selectedWord.targetLang || 'vi',
+        videoId: videoId,
+        subtitleOriginalText: selectedWord.context || '',
+        subtitleTranslatedText: selectedWord.translatedContext || ''
       });
       setWordSaved(true);
-    } catch {
+    } catch (err) {
+      console.error('Lỗi lưu từ vựng:', err);
       setWordSaved(true);
     } finally {
       setIsSavingWord(false);
@@ -644,7 +733,7 @@ const LessonScreen = () => {
                         {activeSubtitle.text.split(' ').map((word, wIdx) => (
                           <span
                             key={wIdx}
-                            onClick={(e) => handleWordClick(e, word, activeSubtitle.text)}
+                            onClick={(e) => handleWordClick(e, word, activeSubtitle.text, activeSubtitle.translated)}
                             className="hover:text-[#E8C59A] hover:underline cursor-pointer transition-colors px-0.5 inline-block"
                           >
                             {word}{' '}
@@ -796,7 +885,7 @@ const LessonScreen = () => {
                           {item.text.split(' ').map((w, wIdx) => (
                             <span
                               key={wIdx}
-                              onClick={(e) => handleWordClick(e, w, item.text)}
+                              onClick={(e) => handleWordClick(e, w, item.text, item.translated)}
                               className="hover:bg-[#EBDCCB] hover:text-[#79542E] rounded-[2px] px-0.5 py-0.2 transition-colors inline-block"
                             >
                               {w}{' '}
@@ -851,35 +940,85 @@ const LessonScreen = () => {
 
       {selectedWord && (
         <div
+          ref={popoverRef}
           style={{ top: `${popoverPos.y}px`, left: `${popoverPos.x}px` }}
-          className="fixed z-50 w-72 bg-[#FFFDF8] border border-[#DED8CC] rounded-[5px] p-3.5 shadow-xl animate-in fade-in zoom-in-95 duration-150"
+          className="fixed z-50 w-80 bg-[#FFFDF8] border border-[#DED8CC] rounded-[5px] p-4 shadow-xl animate-in fade-in zoom-in-95 duration-150"
         >
-          <div className="flex items-start justify-between border-b border-[#DED8CC]/60 pb-2 mb-2.5">
-            <div>
-              <span className="text-sm font-bold text-[#25231F]">{selectedWord.word}</span>
+          <div className="flex items-start justify-between border-b border-[#DED8CC]/70 pb-2.5 mb-2.5">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-base font-bold text-[#25231F]">{selectedWord.word}</span>
+              {selectedWord.phonetic && (
+                <span className="text-xs font-mono text-[#A67C52] bg-[#F4EDE1] px-1.5 py-0.5 rounded-[3px]">
+                  {selectedWord.phonetic}
+                </span>
+              )}
+              <button
+                onClick={() => speakWord(selectedWord.baseWord || selectedWord.word, selectedWord.sourceLang)}
+                title="Nghe phát âm"
+                className="p-1 hover:bg-[#F4EDE1] rounded text-[#A67C52] hover:text-[#79542E] transition-colors cursor-pointer"
+              >
+                <FiVolume2 className="w-4 h-4" />
+              </button>
             </div>
             <button
               onClick={() => setSelectedWord(null)}
-              className="text-[#777168] hover:text-[#25231F] p-1 cursor-pointer"
+              className="text-[#777168] hover:text-[#25231F] p-1 rounded hover:bg-[#F4EDE1] transition-colors cursor-pointer"
             >
               <FiX className="w-3.5 h-3.5" />
             </button>
           </div>
 
-          <div className="space-y-2 mb-3 text-xs">
-            <div>
-              <p className="text-[10px] font-bold uppercase text-[#777168] tracking-wider mb-0.5">Ngữ cảnh câu</p>
-              <p className="text-[#25231F] font-medium leading-snug italic text-[11px]">{selectedWord.context}</p>
+          <div className="space-y-2.5 mb-3.5 text-xs">
+            {selectedWord.baseWord && selectedWord.baseWord.toLowerCase() !== selectedWord.word.toLowerCase() && (
+              <div className="flex items-center gap-1.5 text-[11px] text-[#777168]">
+                <span>Từ nguyên mẫu:</span>
+                <span className="font-semibold text-[#25231F]">{selectedWord.baseWord}</span>
+              </div>
+            )}
+
+            <div className="bg-[#FAF6EE] p-2.5 rounded-[4px] border border-[#EBDCCB]/50">
+              <p className="text-[10px] font-bold uppercase text-[#A67C52] tracking-wider mb-1 flex items-center justify-between">
+                <span>Định nghĩa</span>
+                <span className="text-[9px] text-[#777168] font-normal uppercase">{selectedWord.targetLang}</span>
+              </p>
+              {selectedWord.loading ? (
+                <div className="flex items-center gap-2 text-[#777168] py-0.5">
+                  <FiLoader className="w-3.5 h-3.5 animate-spin text-[#A67C52]" />
+                  <span className="text-[11px]">Đang tra cứu từ điển...</span>
+                </div>
+              ) : selectedWord.meaning ? (
+                <p className="text-sm font-semibold text-[#25231F] leading-snug capitalize">
+                  {selectedWord.meaning}
+                </p>
+              ) : (
+                <p className="text-xs text-[#777168] italic">
+                  {selectedWord.error || 'Không tìm thấy định nghĩa'}
+                </p>
+              )}
             </div>
+
+            {selectedWord.context && (
+              <div>
+                <p className="text-[10px] font-bold uppercase text-[#777168] tracking-wider mb-0.5">Ngữ cảnh câu</p>
+                <p className="text-[#25231F] font-medium leading-snug italic text-[11px] bg-white/60 p-2 rounded border border-[#DED8CC]/40">
+                  "{selectedWord.context}"
+                </p>
+                {selectedWord.translatedContext && (
+                  <p className="text-[11px] text-[#777168] mt-1 pl-1">
+                    {selectedWord.translatedContext}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           <button
             onClick={handleSaveWord}
-            disabled={wordSaved || isSavingWord}
-            className={`w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer ${
+            disabled={wordSaved || isSavingWord || selectedWord.loading}
+            className={`w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer ${
               wordSaved
                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                : 'bg-[#A67C52] hover:bg-[#79542E] text-white'
+                : 'bg-[#A67C52] hover:bg-[#79542E] text-white shadow-sm'
             }`}
           >
             {wordSaved ? (
