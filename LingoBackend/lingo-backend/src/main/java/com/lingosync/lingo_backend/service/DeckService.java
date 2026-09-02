@@ -73,10 +73,16 @@ public class DeckService {
     }
 
     // Lấy toàn bộ decks của user, kèm tổng số card và số card cần ôn hôm nay
-    @Transactional(readOnly = true)
+    @Transactional
     public List<DeckResponse> getMyDecks(String userEmail) {
         Users user = findUserByEmail(userEmail);
         List<Deck> decks = deckRepository.findByUserId(user.getId());
+        if (decks.isEmpty()) {
+            Deck defaultDeck = Deck.builder().name("My Vocabulary").description("Your default vocabulary deck")
+                    .user(user).build();
+            defaultDeck = deckRepository.save(defaultDeck);
+            decks = List.of(defaultDeck);
+        }
 
         return decks.stream().map(deck -> DeckResponse.builder()
                 .id(deck.getId())

@@ -4,11 +4,13 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestClient;
 
 import lombok.RequiredArgsConstructor;
 import com.lingosync.lingo_backend.repository.VocabularyRepository;
 import com.lingosync.lingo_backend.dto.SaveVocabularyRequest;
 import com.lingosync.lingo_backend.dto.VocabularyResponse;
+import com.lingosync.lingo_backend.dto.WordLookupResponse;
 import com.lingosync.lingo_backend.exception.UserNotFoundException;
 import com.lingosync.lingo_backend.repository.DeckRepository;
 import com.lingosync.lingo_backend.repository.FlashcardRepository;
@@ -31,6 +33,7 @@ public class VocabularyService {
         private final SubtitleRepository subtitleRepository;
         private final DeckRepository deckRepository;
         private final FlashcardRepository flashcardRepository;
+        private final RestClient restClient;
 
         @Transactional
         public VocabularyResponse saveVocabulary(SaveVocabularyRequest req, String userEmail) {
@@ -98,4 +101,12 @@ public class VocabularyService {
 
         }
 
+        public WordLookupResponse lookupWord(String word, String sourceLang, String targetLang) {
+                return restClient.get()
+                                .uri(uriBuilder -> uriBuilder.path("/api/word/lookup").queryParam("word", word)
+                                                .queryParam("source_lang", sourceLang != null ? sourceLang : "en")
+                                                .queryParam("target_lang", targetLang != null ? targetLang : "vi")
+                                                .build())
+                                .retrieve().body(WordLookupResponse.class);
+        }
 }

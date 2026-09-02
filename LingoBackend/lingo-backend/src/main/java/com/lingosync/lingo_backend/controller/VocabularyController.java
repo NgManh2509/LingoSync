@@ -12,10 +12,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.lingosync.lingo_backend.dto.SaveVocabularyRequest;
 import com.lingosync.lingo_backend.dto.VocabularyResponse;
+import com.lingosync.lingo_backend.dto.WordLookupResponse;
 import com.lingosync.lingo_backend.service.VocabularyService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api/vocabulary")
@@ -33,5 +35,13 @@ public class VocabularyController {
     @GetMapping("/my-list")
     public ResponseEntity<List<VocabularyResponse>> getMyVocabulary(Authentication authentication) {
         return ResponseEntity.ok(vocabularyService.getMyVocabulary(authentication.getName()));
+    }
+
+    @GetMapping("/lookup")
+    public ResponseEntity<WordLookupResponse> lookupWord(
+            @RequestParam String word,
+            @RequestParam(defaultValue = "en") String sourceLang,
+            @RequestParam(defaultValue = "vi") String targetLang) {
+        return ResponseEntity.ok(vocabularyService.lookupWord(word, sourceLang, targetLang));
     }
 }
