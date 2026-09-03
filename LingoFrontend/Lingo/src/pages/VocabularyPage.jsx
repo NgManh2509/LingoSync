@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  FiFolder, 
-  FiPlus, 
-  FiSearch, 
-  FiVolume2, 
-  FiTrash2, 
-  FiArrowLeft, 
-  FiClock, 
-  FiBookOpen, 
-  FiLayers, 
-  FiX, 
+import {
+  FiFolder,
+  FiPlus,
+  FiSearch,
+  FiVolume2,
+  FiTrash2,
+  FiArrowLeft,
+  FiClock,
+  FiBookOpen,
+  FiLayers,
+  FiX,
   FiAlertCircle
 } from 'react-icons/fi';
 import { MdOutlineTranslate } from 'react-icons/md';
@@ -142,8 +142,8 @@ const VocabularyPage = () => {
   const filteredDecks = useMemo(() => {
     if (!searchQuery.trim()) return decks;
     const q = searchQuery.toLowerCase();
-    return decks.filter(d => 
-      d.name?.toLowerCase().includes(q) || 
+    return decks.filter(d =>
+      d.name?.toLowerCase().includes(q) ||
       d.description?.toLowerCase().includes(q)
     );
   }, [decks, searchQuery]);
@@ -151,18 +151,18 @@ const VocabularyPage = () => {
   const filteredCards = useMemo(() => {
     if (!searchQuery.trim()) return deckCards;
     const q = searchQuery.toLowerCase();
-    return deckCards.filter(c => 
-      c.vocabulary?.word?.toLowerCase().includes(q) || 
-      c.vocabulary?.definition?.toLowerCase().includes(q) ||
-      c.vocabulary?.phonetic?.toLowerCase().includes(q)
+    return deckCards.filter(c =>
+      (c.word || c.vocabulary?.word)?.toLowerCase().includes(q) ||
+      (c.definition || c.vocabulary?.definition)?.toLowerCase().includes(q) ||
+      (c.phonetic || c.vocabulary?.phonetic)?.toLowerCase().includes(q)
     );
   }, [deckCards, searchQuery]);
 
   const filteredWords = useMemo(() => {
     if (!searchQuery.trim()) return allWords;
     const q = searchQuery.toLowerCase();
-    return allWords.filter(w => 
-      w.word?.toLowerCase().includes(q) || 
+    return allWords.filter(w =>
+      w.word?.toLowerCase().includes(q) ||
       w.definition?.toLowerCase().includes(q) ||
       w.phonetic?.toLowerCase().includes(q)
     );
@@ -239,11 +239,10 @@ const VocabularyPage = () => {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => { setActiveTab('decks'); setSearchQuery(''); }}
-                className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-[5px] transition-colors cursor-pointer ${
-                  activeTab === 'decks'
-                    ? 'bg-[#79542E] text-[#FFFDF8]'
-                    : 'bg-[#FFFDF8] text-[#555048] border border-[#DED8CC] hover:bg-[#F4EDE1]'
-                }`}
+                className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-[5px] transition-colors cursor-pointer ${activeTab === 'decks'
+                  ? 'bg-[#79542E] text-[#FFFDF8]'
+                  : 'bg-[#FFFDF8] text-[#555048] border border-[#DED8CC] hover:bg-[#F4EDE1]'
+                  }`}
               >
                 <FiFolder className="w-3.5 h-3.5" />
                 <span>Bộ thẻ Flashcard ({decks.length})</span>
@@ -251,11 +250,10 @@ const VocabularyPage = () => {
 
               <button
                 onClick={() => { setActiveTab('all_words'); setSearchQuery(''); }}
-                className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-[5px] transition-colors cursor-pointer ${
-                  activeTab === 'all_words'
-                    ? 'bg-[#79542E] text-[#FFFDF8]'
-                    : 'bg-[#FFFDF8] text-[#555048] border border-[#DED8CC] hover:bg-[#F4EDE1]'
-                }`}
+                className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-[5px] transition-colors cursor-pointer ${activeTab === 'all_words'
+                  ? 'bg-[#79542E] text-[#FFFDF8]'
+                  : 'bg-[#FFFDF8] text-[#555048] border border-[#DED8CC] hover:bg-[#F4EDE1]'
+                  }`}
               >
                 <MdOutlineTranslate className="w-3.5 h-3.5" />
                 <span>Tất cả từ vựng ({allWords.length})</span>
@@ -328,7 +326,11 @@ const VocabularyPage = () => {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {filteredCards.map((card) => {
-                  const vocab = card.vocabulary || {};
+                  const word = card.word || card.vocabulary?.word || '';
+                  const phonetic = card.phonetic || card.vocabulary?.phonetic || '';
+                  const definition = card.definition || card.vocabulary?.definition || '';
+                  const sourceLang = card.sourceLanguage || card.vocabulary?.sourceLanguage || 'en';
+                  const vocab = { word, phonetic, definition, sourceLanguage: sourceLang };
                   return (
                     <div
                       key={card.id}
@@ -439,11 +441,10 @@ const VocabularyPage = () => {
                       <span className="text-[#777168] text-[11px]">
                         Cần ôn hôm nay:
                       </span>
-                      <span className={`font-semibold px-2 py-0.5 rounded-[3px] text-[11px] ${
-                        (deck.dueCount || 0) > 0 
-                          ? 'bg-[#F4EDE1] text-[#79542E] border border-[#DED8CC]' 
-                          : 'bg-[#FAF6EE] text-[#777168]'
-                      }`}>
+                      <span className={`font-semibold px-2 py-0.5 rounded-[3px] text-[11px] ${(deck.dueCount || 0) > 0
+                        ? 'bg-[#F4EDE1] text-[#79542E] border border-[#DED8CC]'
+                        : 'bg-[#FAF6EE] text-[#777168]'
+                        }`}>
                         {deck.dueCount || 0} từ
                       </span>
                     </div>
@@ -469,7 +470,7 @@ const VocabularyPage = () => {
             ) : (
               <div className="bg-[#FFFDF8] border border-[#DED8CC] rounded-[5px] divide-y divide-[#F4EDE1] shadow-xs overflow-hidden">
                 {filteredWords.map((item) => (
-                  <div 
+                  <div
                     key={item.id}
                     className="p-4 hover:bg-[#FAF6EE] transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                   >

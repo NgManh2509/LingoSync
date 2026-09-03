@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import YouTube from 'react-youtube';
-import { 
-  FiPlay, 
-  FiPause, 
-  FiVolume2, 
-  FiVolumeX, 
-  FiMaximize, 
-  FiSearch, 
-  FiDownload, 
-  FiArrowLeft, 
-  FiClock, 
+import {
+  FiPlay,
+  FiPause,
+  FiVolume2,
+  FiVolumeX,
+  FiMaximize,
+  FiSearch,
+  FiDownload,
+  FiArrowLeft,
+  FiClock,
   FiBookOpen,
   FiPlus,
   FiCheck,
@@ -106,7 +106,7 @@ const LessonScreen = () => {
                 realTitle = noembedJson.title;
               }
             }
-          } catch {}
+          } catch { }
         }
 
         let rawSubtitles = res.data.subtitles || [];
@@ -119,7 +119,7 @@ const LessonScreen = () => {
                 rawSubtitles = scriptJson;
               }
             }
-          } catch {}
+          } catch { }
         }
 
         const formattedSubtitles = rawSubtitles.map((s, idx) => {
@@ -143,7 +143,7 @@ const LessonScreen = () => {
         apiClient.post(`/api/videos/${id}/history`, {
           lastPositionSeconds: 0,
           completed: false
-        }).catch(() => {});
+        }).catch(() => { });
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Không thể tải thông tin bài học.');
@@ -188,7 +188,7 @@ const LessonScreen = () => {
         apiClient.post(`/api/videos/${videoId}/history`, {
           lastPositionSeconds: Math.floor(currentTimeRef.current),
           completed: false
-        }).catch(() => {});
+        }).catch(() => { });
       }
     };
   }, [videoId]);
@@ -240,7 +240,7 @@ const LessonScreen = () => {
           if (foundIdx !== -1 && foundIdx !== activeSubtitleIndex) {
             setActiveSubtitleIndex(foundIdx);
           }
-        } catch {}
+        } catch { }
       }, 250);
     }
     return () => clearInterval(interval);
@@ -266,7 +266,7 @@ const LessonScreen = () => {
         ytPlayer.setOption('captions', 'track', {});
         ytPlayer.setOption('cc', 'track', {});
       }
-    } catch {}
+    } catch { }
   };
 
   const onPlayerReady = (event) => {
@@ -285,7 +285,7 @@ const LessonScreen = () => {
         apiClient.post(`/api/videos/${videoId}/history`, {
           lastPositionSeconds: Math.floor(currentTime),
           completed: event.data === 0
-        }).catch(() => {});
+        }).catch(() => { });
       }
     }
   };
@@ -367,7 +367,7 @@ const LessonScreen = () => {
     window.speechSynthesis.speak(utterance);
   };
 
-  const handleWordClick = async (e, rawWord, fullSentence, translatedSentence = '') => {
+  const handleWordClick = async (e, rawWord, fullSentence, translatedSentence = '', subItem = null) => {
     e.stopPropagation();
     const cleanWord = rawWord.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"'“”‘’…\[\]]/gu, '').trim();
     if (!cleanWord) return;
@@ -396,6 +396,8 @@ const LessonScreen = () => {
       targetLang,
       context: fullSentence,
       translatedContext: translatedSentence || '',
+      startTime: subItem?.seconds || 0,
+      sequenceOrder: subItem?.id || 1,
       loading: true,
       error: null
     });
@@ -448,8 +450,11 @@ const LessonScreen = () => {
         targetLanguage: selectedWord.targetLang || 'vi',
         videoId: videoId,
         subtitleOriginalText: selectedWord.context || '',
-        subtitleTranslatedText: selectedWord.translatedContext || ''
+        subtitleTranslatedText: selectedWord.translatedContext || '',
+        startTime: selectedWord.startTime,
+        sequenceOrder: selectedWord.sequenceOrder
       });
+
       setWordSaved(true);
     } catch (err) {
       console.error('Lỗi lưu từ vựng:', err);
@@ -469,7 +474,7 @@ const LessonScreen = () => {
     return (
       <div className="min-h-screen bg-[#F7F3EA] text-[#25231F] font-['Plus_Jakarta_Sans',sans-serif] -m-6 sm:-m-8 p-6 sm:p-10">
         <div className="max-w-[1120px] mx-auto w-full space-y-8">
-          
+
           <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl sm:text-[28px] font-bold text-[#25231F] tracking-tight">
@@ -570,9 +575,9 @@ const LessonScreen = () => {
                     >
                       <div className="aspect-video bg-[#25231F] relative overflow-hidden flex items-center justify-center">
                         {thumbSrc ? (
-                          <img 
-                            src={thumbSrc} 
-                            alt={item.title || 'Video Thumbnail'} 
+                          <img
+                            src={thumbSrc}
+                            alt={item.title || 'Video Thumbnail'}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             onError={(e) => {
                               e.currentTarget.style.display = 'none';
@@ -590,7 +595,7 @@ const LessonScreen = () => {
                         <h3 className="text-xs font-bold text-[#25231F] line-clamp-2 mb-2 group-hover:text-[#79542E] transition-colors">
                           {item.title || 'Video bài học'}
                         </h3>
-                        
+
                         <div className="flex items-center justify-between text-[11px] text-[#777168]">
                           <span className="flex items-center gap-1">
                             <FiClock className="w-3 h-3 text-[#A67C52]" />
@@ -608,12 +613,12 @@ const LessonScreen = () => {
 
         </div>
 
-        <CreateVideoModal 
-          isOpen={showCreateModal} 
+        <CreateVideoModal
+          isOpen={showCreateModal}
           onClose={() => {
             setShowCreateModal(false);
             fetchHistory();
-          }} 
+          }}
         />
       </div>
     );
@@ -647,7 +652,7 @@ const LessonScreen = () => {
   }
 
   const subtitlesList = videoData.formattedSubtitles || [];
-  const filteredSubtitles = subtitlesList.filter(item => 
+  const filteredSubtitles = subtitlesList.filter(item =>
     item.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.translated.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -658,14 +663,14 @@ const LessonScreen = () => {
     setSubtitlesMode(modes[nextIdx]);
   };
 
-  const activeSubtitle = activeSubtitleIndex >= 0 && activeSubtitleIndex < subtitlesList.length 
-    ? subtitlesList[activeSubtitleIndex] 
+  const activeSubtitle = activeSubtitleIndex >= 0 && activeSubtitleIndex < subtitlesList.length
+    ? subtitlesList[activeSubtitleIndex]
     : null;
 
   return (
     <div className="min-h-screen bg-[#F7F3EA] text-[#25231F] font-['Plus_Jakarta_Sans',sans-serif] -m-6 sm:-m-8 p-6 sm:p-10 select-none">
       <div className="max-w-[1120px] mx-auto w-full">
-        
+
         <header className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <button
@@ -690,7 +695,7 @@ const LessonScreen = () => {
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8 items-start">
-          
+
           <div className="lg:col-span-8 bg-[#181715] rounded-[5px] overflow-hidden relative flex flex-col border border-[#333028] shadow-sm">
             <div id="youtube-player-frame" className="relative w-full aspect-video flex items-center justify-center bg-black overflow-hidden">
               <YouTube
@@ -715,7 +720,7 @@ const LessonScreen = () => {
               />
 
               {!isPlaying && (
-                <div 
+                <div
                   onClick={togglePlay}
                   className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 backdrop-blur-[2px] cursor-pointer group"
                 >
@@ -733,7 +738,7 @@ const LessonScreen = () => {
                         {activeSubtitle.text.split(' ').map((word, wIdx) => (
                           <span
                             key={wIdx}
-                            onClick={(e) => handleWordClick(e, word, activeSubtitle.text, activeSubtitle.translated)}
+                            onClick={(e) => handleWordClick(e, word, activeSubtitle.text, activeSubtitle.translated, activeSubtitle)}
                             className="hover:text-[#E8C59A] hover:underline cursor-pointer transition-colors px-0.5 inline-block"
                           >
                             {word}{' '}
@@ -753,7 +758,7 @@ const LessonScreen = () => {
 
             <div className="h-12 bg-gradient-to-t from-black/90 to-black/40 px-4 flex items-center justify-between text-white/90 text-xs font-medium border-t border-white/5">
               <div className="flex items-center gap-3">
-                <button 
+                <button
                   onClick={togglePlay}
                   className="p-1 hover:text-white transition-colors cursor-pointer"
                 >
@@ -764,45 +769,43 @@ const LessonScreen = () => {
                 </span>
               </div>
 
-              <div 
+              <div
                 onClick={handleSeek}
                 className="flex-1 mx-4 sm:mx-6 h-1.5 bg-white/20 rounded-[5px] relative overflow-hidden group cursor-pointer"
               >
-                <div 
+                <div
                   className="absolute left-0 top-0 h-full bg-[#A67C52] transition-all"
                   style={{ width: `${(currentTime / (duration || 1)) * 100}%` }}
                 />
               </div>
 
               <div className="flex items-center gap-2.5">
-                <button 
+                <button
                   onClick={cycleSubtitleMode}
-                  title={`Chế độ phụ đề: ${
-                    subtitlesMode === 'dual' ? 'Song ngữ (Bilingual)' :
+                  title={`Chế độ phụ đề: ${subtitlesMode === 'dual' ? 'Song ngữ (Bilingual)' :
                     subtitlesMode === 'original' ? 'Chỉ tiếng gốc' :
-                    subtitlesMode === 'translated' ? 'Chỉ bản dịch' : 'Tắt phụ đề'
-                  }`}
-                  className={`px-2 py-0.5 rounded-[3px] text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer ${
-                    subtitlesMode !== 'off'
-                      ? 'bg-[#A67C52] text-white shadow-xs'
-                      : 'bg-white/10 hover:bg-white/20 text-white/50'
-                  }`}
+                      subtitlesMode === 'translated' ? 'Chỉ bản dịch' : 'Tắt phụ đề'
+                    }`}
+                  className={`px-2 py-0.5 rounded-[3px] text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer ${subtitlesMode !== 'off'
+                    ? 'bg-[#A67C52] text-white shadow-xs'
+                    : 'bg-white/10 hover:bg-white/20 text-white/50'
+                    }`}
                 >
                   CC {subtitlesMode === 'dual' ? 'Dual' : subtitlesMode === 'original' ? 'Orig' : subtitlesMode === 'translated' ? 'Trans' : 'Off'}
                 </button>
-                <button 
+                <button
                   onClick={cyclePlaybackRate}
                   className="px-1.5 py-0.5 rounded-[3px] bg-white/10 hover:bg-white/20 text-[11px] font-mono text-white transition-colors cursor-pointer"
                 >
                   {playbackRate}x
                 </button>
-                <button 
+                <button
                   onClick={toggleMute}
                   className="p-1 hover:text-white transition-colors cursor-pointer"
                 >
                   {isMuted ? <FiVolumeX className="w-4 h-4" /> : <FiVolume2 className="w-4 h-4" />}
                 </button>
-                <button 
+                <button
                   onClick={toggleFullscreen}
                   className="p-1 hover:text-white transition-colors cursor-pointer"
                 >
@@ -820,11 +823,10 @@ const LessonScreen = () => {
                   Transcript ({subtitlesList.length})
                 </h3>
               </div>
-              <button 
+              <button
                 onClick={() => setShowSearch(!showSearch)}
-                className={`p-1.5 rounded-[4px] transition-colors cursor-pointer ${
-                  showSearch ? 'bg-[#DED8CC] text-[#25231F]' : 'text-[#777168] hover:text-[#25231F] hover:bg-white/60'
-                }`}
+                className={`p-1.5 rounded-[4px] transition-colors cursor-pointer ${showSearch ? 'bg-[#DED8CC] text-[#25231F]' : 'text-[#777168] hover:text-[#25231F] hover:bg-white/60'
+                  }`}
                 title="Search transcript"
               >
                 <FiSearch className="w-3.5 h-3.5" />
@@ -846,7 +848,7 @@ const LessonScreen = () => {
               </div>
             )}
 
-            <div 
+            <div
               ref={transcriptScrollRef}
               className="flex-1 overflow-y-auto p-4 space-y-4 divide-y divide-[#F4EDE1]"
             >
@@ -862,30 +864,27 @@ const LessonScreen = () => {
                       key={item.id}
                       ref={isActive ? activeLineRef : null}
                       onClick={() => handleSubtitleClick(item.seconds, index)}
-                      className={`pt-3 first:pt-0 flex gap-3 transition-all rounded-[4px] p-2 -mx-1 cursor-pointer ${
-                        isActive 
-                          ? 'bg-[#F4EDE1]/80 relative pl-3' 
-                          : 'hover:bg-[#FAF6EE]'
-                      }`}
+                      className={`pt-3 first:pt-0 flex gap-3 transition-all rounded-[4px] p-2 -mx-1 cursor-pointer ${isActive
+                        ? 'bg-[#F4EDE1]/80 relative pl-3'
+                        : 'hover:bg-[#FAF6EE]'
+                        }`}
                     >
                       {isActive && (
                         <div className="absolute left-0 top-1 bottom-1 w-1 bg-[#A67C52] rounded-r-[2px]" />
                       )}
 
-                      <span className={`font-mono text-[11px] mt-0.5 w-9 shrink-0 font-medium ${
-                        isActive ? 'text-[#A67C52] font-bold' : 'text-[#777168]'
-                      }`}>
+                      <span className={`font-mono text-[11px] mt-0.5 w-9 shrink-0 font-medium ${isActive ? 'text-[#A67C52] font-bold' : 'text-[#777168]'
+                        }`}>
                         {item.time}
                       </span>
 
                       <div className="flex-1 space-y-1">
-                        <p className={`text-[13px] leading-relaxed ${
-                          isActive ? 'text-[#25231F] font-semibold' : 'text-[#50453B]'
-                        }`}>
+                        <p className={`text-[13px] leading-relaxed ${isActive ? 'text-[#25231F] font-semibold' : 'text-[#50453B]'
+                          }`}>
                           {item.text.split(' ').map((w, wIdx) => (
                             <span
                               key={wIdx}
-                              onClick={(e) => handleWordClick(e, w, item.text, item.translated)}
+                              onClick={(e) => handleWordClick(e, w, item.text, item.translated, item)}
                               className="hover:bg-[#EBDCCB] hover:text-[#79542E] rounded-[2px] px-0.5 py-0.2 transition-colors inline-block"
                             >
                               {w}{' '}
@@ -926,7 +925,7 @@ const LessonScreen = () => {
           </div>
 
           <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 shrink-0">
-            <button 
+            <button
               onClick={() => setShowAddToPlaylistModal(true)}
               className="flex items-center justify-center gap-2 px-3.5 py-2 border border-[#DED8CC] bg-[#FFFDF8] hover:bg-[#EFE9DD] text-[#25231F] rounded-[5px] text-xs font-semibold transition-colors cursor-pointer min-h-[38px]"
             >
@@ -987,8 +986,8 @@ const LessonScreen = () => {
                   <span className="text-[11px]">Đang tra cứu từ điển...</span>
                 </div>
               ) : selectedWord.meaning ? (
-                <p className="text-sm font-semibold text-[#25231F] leading-snug capitalize">
-                  {selectedWord.meaning}
+                <p className="text-sm font-semibold text-[#25231F] leading-snug">
+                  {selectedWord.meaning ? selectedWord.meaning.charAt(0).toUpperCase() + selectedWord.meaning.slice(1) : ''}
                 </p>
               ) : (
                 <p className="text-xs text-[#777168] italic">
@@ -1015,11 +1014,10 @@ const LessonScreen = () => {
           <button
             onClick={handleSaveWord}
             disabled={wordSaved || isSavingWord || selectedWord.loading}
-            className={`w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer ${
-              wordSaved
-                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                : 'bg-[#A67C52] hover:bg-[#79542E] text-white shadow-sm'
-            }`}
+            className={`w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer ${wordSaved
+              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+              : 'bg-[#A67C52] hover:bg-[#79542E] text-white shadow-sm'
+              }`}
           >
             {wordSaved ? (
               <>
