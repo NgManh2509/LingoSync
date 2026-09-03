@@ -10,6 +10,7 @@ from deep_translator import GoogleTranslator
 from google import genai
 from google.genai import types
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+import re
 
 load_dotenv()
 _gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
@@ -143,6 +144,39 @@ def calculate_optimal_batch_size(
     
     calculated = math.ceil(total_items / target_batches)
     return max(min_batch_size, min(calculated, max_batch_size))
+
+def _extract_json_array(text: str) -> list | None:
+    if not text:
+        return None
+    clean = text.strip()
+    try:
+        data = json.loads(clean)
+        if isinstance(data, list):
+            return data
+    except Exception:
+        pass
+
+    clean = re.sub(r"^```(?:json)?\s*", "", clean)
+    clean = re.sub(r"\s*```$", "", clean)
+
+    start_idx = clean.find("[")
+    if start_idx != -1:
+        try:
+            obj, _ = json.JSONDecoder().raw_decode(clean[start_idx:])
+            if isinstance(obj, list):
+                return obj
+        except Exception:
+            pass
+
+    match = re.search(r'\[\s*(?:.*)\s*\]', clean, re.DOTALL)
+    if match:
+        try:
+            obj = json.loads(match.group(0))
+            if isinstance(obj, list):
+                return obj
+        except Exception:
+            pass
+    return None
 
 
 def chunk_list(lst: list, batch_size: int):
@@ -289,43 +323,65 @@ def _gemini_translate_batch(
     tgt_lang: str,
     video_title: str = "",
     video_tags: str = "",
-    channel: str = ""
+    channel: str = "",
+    max_retries: int = 3
 ) -> list[str]:
-    """Dịch một batch phụ đề bằng Gemini API kèm Video Context, chống lỗi 429."""
     payload = [{"id": i, "text": item.get("text", "").strip()} for i, item in enumerate(batch_items)]
     
     context_section = ""
     if video_title or video_tags or channel:
         context_section = (
-            f"## Video Context (Use this context to accurately translate proper nouns, specialized terms, jargon, names, and tone):\n"
-            f"- **Title:** {video_title or 'N/A'}\n"
-            f"- **Channel:** {channel or 'N/A'}\n"
-            f"- **Tags/Keywords:** {video_tags or 'N/A'}\n\n"
+            f"=== VIDEO METADATA & CONTEXT ===\n"
+            f"• Title: {video_title or 'N/A'}\n"
+            f"• Channel / Creator: {channel or 'N/A'}\n"
+            f"• Topic / Tags: {video_tags or 'N/A'}\n"
+            f"=================================\n\n"
         )
 
     prompt = (
-        f"You are a professional subtitle translator.\n"
+        f"You are a master bilingual subtitle localization specialist for online video streaming.\n"
         f"{context_section}"
-        f"Your task is to translate each subtitle item's 'text' into {tgt_lang}.\n"
-        "Rules:\n"
-        "1. Keep natural subtitle phrasing and appropriate tone in context of the continuous video dialogue.\n"
-        "2. Accurately translate proper nouns, specialized jargon, and slang based on the Video Context.\n"
-        "3. Maintain EXACT same number of elements and same ordering.\n"
-        "4. Return ONLY a valid JSON array of strings containing translations, e.g. [\"câu 1\", \"câu 2\", ...].\n\n"
+        f"TASK: Localize the following sequential subtitle entries into {tgt_lang}.\n\n"
+        f"DEEP CONTEXT GROUNDING INSTRUCTIONS:\n"
+        f"1. Domain & Tone Alignment: Analyze the Video Metadata above to deduce the exact genre (e.g. tech review, academic lecture, vlog, gaming, business analysis). Adapt vocabulary and stylistic tone to match this exact domain.\n"
+        f"2. Natural Pronouns & Register: For {tgt_lang}, choose conversational, natural pronouns and particles fitting the speaker-audience relationship (e.g. in Vietnamese: use lively, natural pronouns like 'mình / các bạn', 'tôi', etc. appropriate to the channel; strictly avoid robotic literal phrasing).\n"
+        f"3. Specialized Terminology: Accurately translate domain-specific jargon, slang, and idioms according to industry conventions. Keep widely accepted technical names, brand names, and proper nouns intact.\n"
+        f"4. Dialogue Flow: These subtitles form a continuous dialogue stream split across timestamps. Translate each line with seamless coherence to preceding and subsequent lines.\n"
+        f"5. Brevity & Punchiness: Keep translated subtitles concise and easy to read quickly on screen without distorting the core message.\n\n"
+        f"STRICT OUTPUT SPECIFICATION:\n"
+        f"• Must return EXACTLY {len(batch_items)} translated strings in the identical sequence.\n"
+        f"• Output MUST be a single raw JSON array of strings: [\"translation 1\", \"translation 2\", ...].\n"
+        f"• Absolutely no markdown fences (no ```json), no explanatory notes before or after.\n\n"
         f"Subtitles to translate:\n{json.dumps(payload, ensure_ascii=False)}"
     )
 
+    for attempt in range(1, max_retries + 1):
+        try:
+            raw_text = _call_gemini_generate(
+                contents=prompt,
+                response_mime_type="application/json"
+            )
+            translated_list = _extract_json_array(raw_text)
+            if isinstance(translated_list, list) and len(translated_list) == len(batch_items):
+                return [str(t).strip() for t in translated_list]
+
+            got_len = len(translated_list) if isinstance(translated_list, list) else 0
+            logger.warning(f"[Gemini batch] Dữ liệu JSON không khớp (got {got_len}, expected {len(batch_items)}). Thử lại {attempt}/{max_retries}...")
+        except Exception as e:
+            logger.warning(f"[Gemini batch] Lỗi dịch batch (attempt {attempt}/{max_retries}): {e}")
+
+        if attempt < max_retries:
+            time.sleep(attempt * 2.0)
+
     try:
-        raw_text = _call_gemini_generate(
-            contents=prompt,
-            response_mime_type="application/json"
-        )
-        translated_list = json.loads(raw_text)
-        if isinstance(translated_list, list) and len(translated_list) == len(batch_items):
-            return [str(t).strip() for t in translated_list]
-        logger.warning(f"[Gemini batch] Output JSON length mismatch (got {len(translated_list)}, expected {len(batch_items)}).")
-    except Exception as e:
-        logger.error(f"[Gemini batch] Lỗi dịch batch: {e}")
+        translator = GoogleTranslator(source="auto", target=tgt_lang)
+        fallback = translator.translate_batch([item.get("text", "") for item in batch_items])
+        if fallback and len(fallback) == len(batch_items):
+            logger.info(f"[Gemini batch] Đã cứu thành công {len(batch_items)} câu qua GoogleTranslator fallback.")
+            return [str(t).strip() for t in fallback]
+    except Exception as ge:
+        logger.error(f"[Gemini batch] Fallback Google thất bại: {ge}")
+
     return [item.get("text", "") for item in batch_items]
 
 
