@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" fill="none">
+  <!-- Academic Minimalist Background Tile -->
+  <rect width="64" height="64" rx="14" fill="#25231F"/>
+  <rect x="1" y="1" width="62" height="62" rx="13" stroke="#3A352F" stroke-width="1.5" stroke-opacity="0.8"/>
+
+  <!-- Subtle Parchment Texture / Inner Glow -->
+  <circle cx="32" cy="18" r="24" fill="#A67C52" fill-opacity="0.12" filter="blur(8px)"/>
+
+  <!-- Left Glyph: Stylized "L" + Bilingual Subtitle Frame in Warm Parchment -->
+  <path 
+    d="M 19 16 C 19 14.895 19.895 14 21 14 L 25 14 C 26.105 14 27 14.895 27 16 L 27 39 C 27 40.105 27.895 41 29 41 L 43 41 C 44.105 41 45 41.895 45 43 L 45 47 C 45 48.105 44.105 49 43 49 L 21 49 C 19.895 49 19 48.105 19 47 Z" 
+    fill="url(#lingo_gold)"
+  />
+
+  <!-- Right Glyph: Elegant "S" / Waveform Sync Arc in Cognac Terracotta -->
+  <path 
+    d="M 43 19 C 43 17.895 42.105 17 41 17 L 31 17 C 28.79 17 27 18.79 27 21 C 27 23.21 28.79 25 31 25 L 39 25 C 42.314 25 45 27.686 45 31 C 45 34.314 42.314 37 39 37 L 35 37 C 33.895 37 33 36.105 33 35 L 33 33 C 33 31.895 33.895 31 35 31 L 39 31 C 40.105 31 41 30.105 41 29 C 41 27.895 40.105 27 39 27 L 31 27 C 26.582 27 23 23.418 23 19 C 23 14.582 26.582 11 31 11 L 41 11 C 42.105 11 43 11.895 43 13 Z" 
+    fill="url(#lingo_cognac)"
+  />
+
+  <!-- Center Sync Spark / Audio Node -->
+  <circle cx="36" cy="31" r="2.5" fill="#FFFDF8"/>
+  <circle cx="21" cy="20" r="1.5" fill="#E8C59A" opacity="0.9"/>
+  <circle cx="43" cy="45" r="1.5" fill="#E8C59A" opacity="0.9"/>
+
+  <defs>
+    <linearGradient id="lingo_gold" x1="19" y1="14" x2="45" y2="49" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFDF8"/>
+      <stop offset="50%" stop-color="#F4EDE1"/>
+      <stop offset="100%" stop-color="#E8C59A"/>
+    </linearGradient>
+    <linearGradient id="lingo_cognac" x1="23" y1="11" x2="45" y2="37" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#D4A373"/>
+      <stop offset="50%" stop-color="#A67C52"/>
+      <stop offset="100%" stop-color="#79542E"/>
+    </linearGradient>
+  </defs>
+</svg>

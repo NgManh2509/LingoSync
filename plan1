@@ -1,0 +1,78 @@
+# Kế hoạch Triển khai: Giao diện Luyện tập & Thử thách (Phase 4: Challenges & Flashcard Review)
+
+Xây dựng màn hình **Luyện tập & Thử thách (`ChallengesPage.jsx`)** tại tuyến đường `/challenges` và tích hợp **Chế độ Lật thẻ Flashcard tương tác (Flashcard Study Session)** vào cả `VocabularyPage.jsx` lẫn `ChallengesPage.jsx`.
+
+---
+
+## 1. Mục tiêu & Luồng Người dùng
+
+### A. Chế độ Lật thẻ Flashcard (Spaced Repetition SM-2)
+- **Truy cập:**
+  - Bấm nút **"Ôn tập ngay (Study Now)"** trên bất kỳ bộ thẻ nào ở trang `VocabularyPage.jsx` hoặc trang `ChallengesPage.jsx`.
+- **Luồng học:**
+  1. Frontend gọi `GET /api/decks/{deckId}/review` để lấy danh sách các thẻ **đến hạn ôn tập hôm nay** (thẻ `NEW` hoặc `nextReviewDate <= today`).
+  2. Hiển thị thẻ Flashcard với hiệu ứng lật mượt mà:
+     - **Mặt trước:** Từ vựng, phiên âm IPA, nút loa phát âm (Web Speech API).
+     - **Mặt sau:** Nghĩa tiếng Việt, câu thoại ngữ cảnh trong video gốc và câu dịch.
+  3. **4 Nút đánh giá trí nhớ (Chuẩn thuật toán SuperMemo-2):**
+     - 🟥 **Lặp lại (Again - 1):** Chưa nhớ, cần ôn lại ngay trong phiên.
+     - 🟧 **Khó (Hard - 2):** Nhớ nhưng mất nhiều thời gian suy nghĩ.
+     - 🟦 **Tốt (Good - 3):** Nhớ được tương đối tốt.
+     - 🟩 **Dễ (Easy - 5):** Rất quen thuộc, nâng khoảng cách ngày ôn tiếp theo.
+  4. Gửi kết quả về `POST /api/decks/review` (Backend tự động tính lại `easeFactor`, `intervalDays`, `nextReviewDate`).
+  5. Khi hoàn thành toàn bộ thẻ: Hiển thị màn hình **Tổng kết phiên ôn tập** (Số thẻ đã hoàn thành, số từ nhớ/cần ôn thêm).
+
+---
+
+### B. Chế độ Bài tập đục lỗ (Fill-in-the-blank Challenge)
+- **Truy cập:** Mục Thử thách điền từ trên trang `/challenges`.
+- **Luồng làm bài:**
+  1. Frontend gọi `GET /api/exercises/fill-in-the-blank?limit=10` để lấy danh sách câu hỏi đục lỗ từ các câu thoại của video bài học người dùng đã xem.
+  2. Hiển thị câu thoại bị khuyết từ (ví dụ: `The scientist conducted an ________ to test the theory.` kèm gợi ý nghĩa tiếng Việt).
+  3. Người dùng nhập từ hoặc chọn từ vào ô trống.
+  4. Bấm nộp bài: Gọi `POST /api/exercises/submit`.
+  5. Backend chấm điểm, cộng điểm kinh nghiệm (**XP**), tính toán thăng cấp (**Level**) và cập nhật chuỗi ngày học (**Streak** 🔥).
+  6. Frontend hiển thị bảng điểm, câu đúng/sai và hiệu ứng nhận thưởng XP.
+
+---
+
+## 2. Các thay đổi đề xuất
+
+### Frontend
+
+#### [NEW] [`FlashcardStudyModal.jsx`](file:///i:/Github/LingoSync/LingoFrontend/Lingo/src/components/common/FlashcardStudyModal.jsx)
+- Modal / Màn hình toàn diện cho phiên học lật thẻ:
+  - Thanh tiến trình: `Thẻ 3 / 10`.
+  - Khối thẻ 3D lật mặt trước/sau khi click hoặc bấm phím Space.
+  - 4 nút đánh giá phím tắt `1, 2, 3, 4`.
+  - Màn hình chúc mừng sau khi hoàn thành.
+  - Tuân thủ phong cách Academic Minimalist, `rounded-[5px]`, không chứa comment.
+
+#### [NEW] [`ChallengesPage.jsx`](file:///i:/Github/LingoSync/LingoFrontend/Lingo/src/pages/ChallengesPage.jsx)
+- Trang trung tâm luyện tập thay thế cho `SectionPlaceholder` tại `/challenges`:
+  - Thẻ thống kê Streak lửa đỏ 🔥, Cấp độ Level, Tổng điểm XP.
+  - 2 Thẻ chọn chế độ:
+    - **Flashcard Review:** Chọn bộ thẻ và bấm ôn tập.
+    - **Fill-in-the-blank:** Bắt đầu thử thách đục lỗ 10 câu.
+  - Tích hợp giao diện làm bài tập đục lỗ trực tiếp với phản hồi đúng/sai tức thì.
+
+#### [MODIFY] [`VocabularyPage.jsx`](file:///i:/Github/LingoSync/LingoFrontend/Lingo/src/pages/VocabularyPage.jsx)
+- Thêm nút **"Ôn tập ngay"** trên các Deck card có `dueCount > 0`.
+- Khi bấm, mở ngay `FlashcardStudyModal` với `deckId` tương ứng.
+
+#### [MODIFY] [`App.jsx`](file:///i:/Github/LingoSync/LingoFrontend/Lingo/src/App.jsx)
+- Thay thế `SectionPlaceholder` tại route `/challenges` bằng `<ChallengesPage />`.
+
+---
+
+## 3. Kế hoạch Kiểm thử & Xác minh
+
+1. **Biên dịch Frontend:** Chạy `npm run build` trên `LingoFrontend/Lingo` đảm bảo không có lỗi cú pháp hay import.
+2. **Kiểm thử Luồng Lật thẻ:**
+   - Mở modal ôn tập của bộ thẻ `"My Vocabulary"`.
+   - Lật mặt trước -> mặt sau -> bấm nút đánh giá (Good/Easy/Again).
+   - Kiểm tra request `POST /api/decks/review` thành công và `dueCount` giảm tương ứng.
+3. **Kiểm thử Bài tập đục lỗ:**
+   - Bắt đầu bài tập đục lỗ từ `/challenges`.
+   - Điền câu trả lời và nộp bài.
+   - Kiểm tra điểm XP và Streak được cập nhật.

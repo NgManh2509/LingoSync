@@ -59,9 +59,22 @@ const CreateVideoModal = ({ isOpen, onClose }) => {
         .then(res => {
           if (res.data && Array.isArray(res.data)) {
             setPlaylists(res.data);
+            const starter = res.data.find(pl => 
+              pl.name?.toLowerCase().includes('tiếng anh khởi động') ||
+              pl.name?.toLowerCase().includes('khởi động') ||
+              pl.name?.toLowerCase().includes('starter')
+            ) || res.data[0];
+            if (starter?.id) {
+              setSelectedPlaylist(starter.id);
+            } else {
+              setSelectedPlaylist('');
+            }
           }
         })
-        .catch(() => setPlaylists([]));
+        .catch(() => {
+          setPlaylists([]);
+          setSelectedPlaylist('');
+        });
     }
   }, [isOpen, user]);
 
@@ -214,7 +227,7 @@ const CreateVideoModal = ({ isOpen, onClose }) => {
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-bold text-[#25231F]" htmlFor="lesson-select">
-                  Thêm vào Playlist (Tùy chọn)
+                  Thêm vào Playlist
                 </label>
                 <select
                   id="lesson-select"
@@ -222,7 +235,6 @@ const CreateVideoModal = ({ isOpen, onClose }) => {
                   onChange={(e) => setSelectedPlaylist(e.target.value)}
                   className="w-full bg-[#FFF9ED] border border-[#DED8CC] rounded-[5px] px-3 py-2 text-xs text-[#25231F] focus:outline-none focus:border-[#A67C52]"
                 >
-                  <option value="">-- Lưu vào Thư viện chung --</option>
                   {playlists.map((pl) => (
                     <option key={pl.id} value={pl.id}>
                       {pl.name}

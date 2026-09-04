@@ -4,18 +4,15 @@
   <rect x="1" y="1" width="62" height="62" rx="13" stroke="#3D3730" stroke-width="1.5"/>
 
   <!-- Open Scholarly Book Base -->
-  <!-- Left Page Cover -->
   <path d="M 13 46 C 18 43 25 43 32 46 L 32 26 C 25 23 18 23 13 26 Z" fill="#D4A373" fill-opacity="0.25"/>
-  <!-- Right Page Cover -->
   <path d="M 51 46 C 46 43 39 43 32 46 L 32 26 C 39 23 46 23 51 26 Z" fill="#D4A373" fill-opacity="0.25"/>
-  <!-- Book Spine & Outlines -->
+  
   <path d="M 12 48 C 18 44 26 44 32 47 C 38 44 46 44 52 48" stroke="#E8C59A" stroke-width="3" stroke-linecap="round"/>
   <path d="M 12 25 L 12 48" stroke="#E8C59A" stroke-width="2.5" stroke-linecap="round"/>
   <path d="M 52 25 L 52 48" stroke="#E8C59A" stroke-width="2.5" stroke-linecap="round"/>
   <line x1="32" y1="26" x2="32" y2="47" stroke="#E8C59A" stroke-width="2.5" stroke-linecap="round"/>
 
   <!-- Bilingual Overlapping Speech / Subtitle Bubbles -->
-  <!-- Back Bubble (Cognac Leather / Target Language) -->
   <g>
     <circle cx="39" cy="22" r="11" fill="#A67C52"/>
     <path d="M 37 31 L 43 36 L 41 29 Z" fill="#A67C52"/>
@@ -23,11 +20,9 @@
     <line x1="35" y1="24" x2="43" y2="24" stroke="#FFFDF8" stroke-width="2" stroke-linecap="round" stroke-opacity="0.8"/>
   </g>
 
-  <!-- Front Bubble (Warm Champagne Gold / Source Language) -->
   <g>
     <circle cx="26" cy="22" r="12" fill="#E8C59A" stroke="#25231F" stroke-width="2.5"/>
     <path d="M 23 33 L 18 39 L 20 31 Z" fill="#E8C59A"/>
-    <!-- Speech lines / Soundwaves -->
     <line x1="19" y1="19" x2="33" y2="19" stroke="#25231F" stroke-width="2.2" stroke-linecap="round"/>
     <line x1="21" y1="24" x2="30" y2="24" stroke="#25231F" stroke-width="2.2" stroke-linecap="round"/>
   </g>

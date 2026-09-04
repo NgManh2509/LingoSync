@@ -70,12 +70,12 @@ const Sidebar = () => {
           <>
             <div className="flex items-center gap-2.5">
               <img 
-                src="/notion-logo-svgrepo-com.svg" 
+                src="/lingosync-logo.svg" 
                 alt="LingoSync Logo" 
-                className="w-7 h-7 object-contain"
+                className="w-7 h-7 object-contain rounded-[4px] shadow-xs"
               />
               <span className="font-bold text-base text-[#25231F] tracking-tight">
-                Lingo<span className="text-[#777168] font-normal">Sync</span>
+                Lingo<span className="text-[#A67C52] font-semibold">Sync</span>
               </span>
             </div>
             <button 
@@ -93,9 +93,9 @@ const Sidebar = () => {
             title="Bấm để mở rộng Sidebar"
           >
             <img 
-              src="/notion-logo-svgrepo-com.svg" 
+              src="/lingosync-logo.svg" 
               alt="LingoSync Logo" 
-              className="w-7 h-7 object-contain"
+              className="w-7 h-7 object-contain rounded-[4px] shadow-xs"
             />
           </button>
         )}

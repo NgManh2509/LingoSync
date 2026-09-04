@@ -38,7 +38,7 @@ const LoginPage = () => {
       <header className="w-full max-w-4xl flex items-center justify-between relative z-10">
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-[5px] bg-white/80 backdrop-blur-md border border-slate-200/80 shadow-xs">
           <img 
-            src="/notion-logo-svgrepo-com.svg" 
+            src="/lingosync-logo.svg" 
             alt="LingoSync Logo" 
             className="w-6 h-6 object-contain"
           />
@@ -57,7 +57,7 @@ const LoginPage = () => {
         <div className="bg-white/85 border border-white/60 rounded-[5px] p-7 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.08)] backdrop-blur-xl text-center">
           <div className="w-10 h-10 flex items-center justify-center mx-auto mb-5">
             <img 
-              src="/notion-logo-svgrepo-com.svg" 
+              src="/lingosync-logo.svg" 
               alt="LingoSync Logo" 
               className="w-10 h-10 object-contain drop-shadow-xs"
             />
