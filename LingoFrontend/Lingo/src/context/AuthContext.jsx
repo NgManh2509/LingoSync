@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import apiClient from '../api/apiClient';
+import i18n from '../i18n/i18n';
 
 const AuthContext = createContext(null);
 
@@ -18,6 +19,13 @@ export const AuthProvider = ({ children }) => {
         try {
             const res = await apiClient.get('/api/users/profile');
             setUser(res.data);
+            if (res.data?.targetLanguage) {
+                i18n.changeLanguage(res.data.targetLanguage);
+                localStorage.setItem('lingosync_target_lang', res.data.targetLanguage);
+            }
+            if (res.data?.nativeLanguage) {
+                localStorage.setItem('lingosync_native_lang', res.data.nativeLanguage);
+            }
         } catch (err) {
             console.error('Lỗi khi lấy thông tin người dùng:', err);
             localStorage.removeItem('lingosync_token');
@@ -50,6 +58,13 @@ export const AuthProvider = ({ children }) => {
                 nativeLanguage
             });
             setUser(res.data);
+            if (targetLanguage) {
+                i18n.changeLanguage(targetLanguage);
+                localStorage.setItem('lingosync_target_lang', targetLanguage);
+            }
+            if (nativeLanguage) {
+                localStorage.setItem('lingosync_native_lang', nativeLanguage);
+            }
             return res.data;
         } catch (err) {
             console.error('Lỗi khi cập nhật ngôn ngữ:', err);

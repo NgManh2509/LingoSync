@@ -9,6 +9,8 @@ import HomePage from './pages/HomePage';
 import LessonScreen from './pages/LessonScreen';
 import PlaylistsPage from './pages/PlaylistsPage';
 import VocabularyPage from './pages/VocabularyPage';
+import ChallengesPage from './pages/ChallengesPage';
+import ProfilePage from './pages/ProfilePage';
 
 const SectionPlaceholder = ({ title, desc }) => (
   <div className="bg-white border border-zinc-200/90 rounded-[5px] p-8 text-center max-w-xl mx-auto mt-12 shadow-xs">
@@ -33,8 +35,8 @@ function App() {
               <Route path="/playlists" element={<PlaylistsPage />} />
               <Route path="/vocabulary" element={<VocabularyPage />} />
               <Route path="/lingo-ai" element={<SectionPlaceholder title="LingoAI — Writing Task 1" desc="Trợ lý AI chấm điểm và gợi ý bài viết IELTS Writing..." />} />
-              <Route path="/profile" element={<SectionPlaceholder title="My Profile" desc="Thông tin tài khoản, cấp độ Level, thống kê tiến độ học tập..." />} />
-              <Route path="/challenges" element={<SectionPlaceholder title="Challenges" desc="Làm bài tập điền từ w____ & Ôn tập thẻ Flashcard ngắt quãng SM-2..." />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/challenges" element={<ChallengesPage />} />
             </Route>
           </Route>
 

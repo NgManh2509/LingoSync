@@ -22,9 +22,11 @@ import {
   MdHistory
 } from 'react-icons/md';
 import { BsRobot } from 'react-icons/bs';
+import { useTranslation } from 'react-i18next';
 import apiClient from '../../api/apiClient';
 
 const Sidebar = () => {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -107,7 +109,7 @@ const Sidebar = () => {
             <div className="space-y-1">
               <NavLink
                 to="/lessons"
-                title="Lessons"
+                title={t('sidebar.lessons')}
                 className={({ isActive }) =>
                   `flex items-center justify-center p-2 rounded-[5px] text-xs transition-colors ${
                     isActive
@@ -121,7 +123,7 @@ const Sidebar = () => {
 
               <NavLink
                 to="/playlists"
-                title="Playlists"
+                title={t('sidebar.playlists')}
                 className={({ isActive }) =>
                   `flex items-center justify-center p-2 rounded-[5px] text-xs transition-colors ${
                     isActive
@@ -135,7 +137,7 @@ const Sidebar = () => {
 
               <NavLink
                 to="/vocabulary"
-                title="Vocabulary"
+                title={t('sidebar.vocabulary')}
                 className={({ isActive }) =>
                   `flex items-center justify-center p-2 rounded-[5px] text-xs transition-colors ${
                     isActive
@@ -159,7 +161,7 @@ const Sidebar = () => {
               >
                 <div className="flex items-center gap-2.5">
                   <HiOutlineBookOpen className="w-4 h-4 text-[#79542E]" />
-                  <span>Library</span>
+                  <span>{t('sidebar.lessons')}</span>
                 </div>
                 {libraryOpen ? (
                   <FiChevronUp className="w-3.5 h-3.5 text-[#777168]" />
@@ -181,7 +183,7 @@ const Sidebar = () => {
                     }
                   >
                     <MdOutlineVideoLibrary className="w-3.5 h-3.5" />
-                    <span>Lessons</span>
+                    <span>{t('sidebar.lessons')}</span>
                   </NavLink>
 
                   <div>
@@ -197,7 +199,7 @@ const Sidebar = () => {
                         }
                       >
                         <MdOutlineQueueMusic className="w-3.5 h-3.5" />
-                        <span>Playlists</span>
+                        <span>{t('sidebar.playlists')}</span>
                         {playlists.length > 0 && (
                           <span className="ml-auto text-[10px] bg-[#FAF6EE] border border-[#DED8CC] text-[#777168] px-1.5 py-0.2 rounded-[3px]">
                             {playlists.length}
@@ -256,7 +258,7 @@ const Sidebar = () => {
                     }
                   >
                     <MdOutlineTranslate className="w-3.5 h-3.5" />
-                    <span>Vocabulary</span>
+                    <span>{t('sidebar.vocabulary')}</span>
                   </NavLink>
                 </div>
               )}
@@ -280,9 +282,9 @@ const Sidebar = () => {
           <BsRobot className="w-4 h-4 text-[#A67C52] shrink-0" />
           {!isCollapsed && (
             <>
-              <span>LingoAI</span>
+              <span>{t('sidebar.lingo_ai')}</span>
               <span className="ml-auto px-1.5 py-0.5 rounded-[3px] bg-[#F4EDE1] text-[#79542E] text-[9px] font-bold border border-[#DED8CC]">
-                Writing
+                {t('sidebar.writing')}
               </span>
             </>
           )}
@@ -291,13 +293,13 @@ const Sidebar = () => {
         <div className="pt-2">
           {!isCollapsed && (
             <div className="px-3 py-1 text-[10px] font-semibold text-[#777168] uppercase tracking-wider">
-              Profile & Practice
+              {t('sidebar.profile_practice')}
             </div>
           )}
           <div className="space-y-0.5">
             <NavLink
               to="/profile"
-              title="My Profile"
+              title={t('sidebar.my_profile')}
               className={({ isActive }) =>
                 `flex items-center ${
                   isCollapsed ? 'justify-center p-2' : 'gap-2.5 px-3 py-1.5'
@@ -309,12 +311,12 @@ const Sidebar = () => {
               }
             >
               <FiUser className="w-4 h-4 text-[#777168] shrink-0" />
-              {!isCollapsed && <span>My Profile</span>}
+              {!isCollapsed && <span>{t('sidebar.my_profile')}</span>}
             </NavLink>
 
             <NavLink
               to="/challenges"
-              title="Challenges"
+              title={t('sidebar.challenges')}
               className={({ isActive }) =>
                 `flex items-center ${
                   isCollapsed ? 'justify-center p-2' : 'gap-2.5 px-3 py-1.5'
@@ -326,7 +328,7 @@ const Sidebar = () => {
               }
             >
               <HiOutlineTrophy className="w-4 h-4 text-[#A67C52] shrink-0" />
-              {!isCollapsed && <span>Challenges</span>}
+              {!isCollapsed && <span>{t('sidebar.challenges')}</span>}
             </NavLink>
           </div>
         </div>
@@ -334,7 +336,7 @@ const Sidebar = () => {
         <div className="pt-3">
           {isCollapsed ? (
             <button
-              title="Activities"
+              title={t('sidebar.activities')}
               className="w-full flex items-center justify-center p-2 rounded-[5px] text-[#777168] hover:bg-[#FAF6EE] transition-colors"
             >
               <MdHistory className="w-4 h-4" />
@@ -347,7 +349,7 @@ const Sidebar = () => {
               >
                 <div className="flex items-center gap-2">
                   <MdHistory className="w-4 h-4 text-[#79542E]" />
-                  <span>Activities</span>
+                  <span>{t('sidebar.activities')}</span>
                 </div>
                 <HiOutlineChevronUpDown className="w-3.5 h-3.5 text-[#777168]" />
               </button>
@@ -405,7 +407,7 @@ const Sidebar = () => {
           {!isCollapsed && (
             <button 
               className="p-2 rounded-[5px] text-[#777168] hover:text-[#25231F] hover:bg-[#FAF6EE] transition-colors cursor-pointer"
-              title="Notifications"
+              title={t('sidebar.notifications')}
             >
               <FiBell className="w-4 h-4" />
             </button>
@@ -418,12 +420,20 @@ const Sidebar = () => {
               <p className="text-xs font-semibold text-[#25231F] truncate">{displayName}</p>
               <p className="text-[11px] text-[#777168] truncate">{user?.email}</p>
             </div>
+            <NavLink
+              to="/profile"
+              onClick={() => setShowUserMenu(false)}
+              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[4px] text-xs font-medium text-[#555048] hover:bg-[#FAF6EE] hover:text-[#25231F] transition-colors"
+            >
+              <FiUser className="w-3.5 h-3.5" />
+              <span>{t('sidebar.profile_progress')}</span>
+            </NavLink>
             <button
               onClick={logout}
               className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[4px] text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
             >
               <FiLogOut className="w-3.5 h-3.5" />
-              <span>Đăng xuất</span>
+              <span>{t('common.logout')}</span>
             </button>
           </div>
         )}

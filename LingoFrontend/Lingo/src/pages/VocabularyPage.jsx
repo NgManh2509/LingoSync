@@ -10,12 +10,16 @@ import {
   FiBookOpen,
   FiLayers,
   FiX,
-  FiAlertCircle
+  FiAlertCircle,
+  FiPlay
 } from 'react-icons/fi';
 import { MdOutlineTranslate } from 'react-icons/md';
 import apiClient from '../api/apiClient';
+import { useTranslation } from 'react-i18next';
+import FlashcardStudyModal from '../components/common/FlashcardStudyModal';
 
 const VocabularyPage = () => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('decks');
   const [decks, setDecks] = useState([]);
   const [loadingDecks, setLoadingDecks] = useState(true);
@@ -28,6 +32,7 @@ const VocabularyPage = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [studyDeck, setStudyDeck] = useState(null);
   const [newDeckName, setNewDeckName] = useState('');
   const [newDeckDesc, setNewDeckDesc] = useState('');
   const [creatingDeck, setCreatingDeck] = useState(false);
@@ -94,7 +99,7 @@ const VocabularyPage = () => {
   const handleCreateDeck = async (e) => {
     e.preventDefault();
     if (!newDeckName.trim()) {
-      setCreateError('Vui lòng nhập tên bộ thẻ.');
+      setCreateError(t('vocab.name_required'));
       return;
     }
     setCreatingDeck(true);
@@ -109,7 +114,7 @@ const VocabularyPage = () => {
       setShowCreateModal(false);
       fetchDecks();
     } catch (err) {
-      setCreateError(err.response?.data?.message || 'Không thể tạo bộ thẻ. Vui lòng thử lại.');
+      setCreateError(err.response?.data?.message || t('vocab.create_failed'));
     } finally {
       setCreatingDeck(false);
     }
@@ -117,7 +122,7 @@ const VocabularyPage = () => {
 
   const handleDeleteDeck = async (deckId, e) => {
     e.stopPropagation();
-    if (!window.confirm('Bạn có chắc chắn muốn xóa bộ thẻ này?')) return;
+    if (!window.confirm(t('vocab.delete_deck_confirm'))) return;
     try {
       await apiClient.delete(`/api/decks/${deckId}`);
       if (selectedDeck?.id === deckId) {
@@ -126,7 +131,7 @@ const VocabularyPage = () => {
         fetchDecks();
       }
     } catch (err) {
-      alert(err.response?.data?.message || 'Không thể xóa bộ thẻ.');
+      alert(err.response?.data?.message || t('vocab.delete_deck_failed'));
     }
   };
 
@@ -180,14 +185,14 @@ const VocabularyPage = () => {
             <div className="flex items-center gap-2 mb-1">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[5px] text-[11px] font-semibold tracking-wide uppercase bg-[#F4EDE1] text-[#79542E] border border-[#DED8CC]">
                 <FiBookOpen className="w-3.5 h-3.5" />
-                LingoSync Study
+                {t('vocab.badge')}
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-[#25231F] tracking-tight">
-              Kho từ vựng & Bộ thẻ
+              {t('vocab.title')}
             </h1>
             <p className="text-xs sm:text-sm text-[#777168] mt-1">
-              Quản lý các bộ thẻ Flashcard và tra cứu lại từ vựng đã lưu trong lúc xem video
+              {t('vocab.subtitle')}
             </p>
           </div>
 
@@ -197,7 +202,7 @@ const VocabularyPage = () => {
               className="inline-flex items-center gap-2 px-3.5 py-2 bg-[#79542E] hover:bg-[#634322] text-[#FFFDF8] text-xs font-semibold rounded-[5px] transition-colors shadow-xs cursor-pointer"
             >
               <FiPlus className="w-4 h-4" />
-              <span>Tạo bộ thẻ mới</span>
+              <span>{t('vocab.create_deck_btn')}</span>
             </button>
           </div>
         </div>
@@ -205,7 +210,7 @@ const VocabularyPage = () => {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 my-6">
           <div className="bg-[#FFFDF8] border border-[#DED8CC] rounded-[5px] p-3.5 sm:p-4 shadow-xs">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-[#777168]">Tổng số bộ thẻ</span>
+              <span className="text-xs font-medium text-[#777168]">{t('vocab.total_decks')}</span>
               <FiFolder className="w-4 h-4 text-[#A67C52]" />
             </div>
             <div className="text-xl sm:text-2xl font-bold text-[#25231F] mt-1.5">
@@ -215,7 +220,7 @@ const VocabularyPage = () => {
 
           <div className="bg-[#FFFDF8] border border-[#DED8CC] rounded-[5px] p-3.5 sm:p-4 shadow-xs">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-[#777168]">Thẻ ghi nhớ</span>
+              <span className="text-xs font-medium text-[#777168]">{t('vocab.total_cards')}</span>
               <FiLayers className="w-4 h-4 text-[#79542E]" />
             </div>
             <div className="text-xl sm:text-2xl font-bold text-[#25231F] mt-1.5">
@@ -225,7 +230,7 @@ const VocabularyPage = () => {
 
           <div className="col-span-2 sm:col-span-1 bg-[#FFFDF8] border border-[#DED8CC] rounded-[5px] p-3.5 sm:p-4 shadow-xs">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-[#777168]">Từ vựng đã lưu</span>
+              <span className="text-xs font-medium text-[#777168]">{t('vocab.saved_words')}</span>
               <MdOutlineTranslate className="w-4 h-4 text-[#A67C52]" />
             </div>
             <div className="text-xl sm:text-2xl font-bold text-[#25231F] mt-1.5">
@@ -245,7 +250,7 @@ const VocabularyPage = () => {
                   }`}
               >
                 <FiFolder className="w-3.5 h-3.5" />
-                <span>Bộ thẻ Flashcard ({decks.length})</span>
+                <span>{t('vocab.decks_tab', { count: decks.length })}</span>
               </button>
 
               <button
@@ -256,7 +261,7 @@ const VocabularyPage = () => {
                   }`}
               >
                 <MdOutlineTranslate className="w-3.5 h-3.5" />
-                <span>Tất cả từ vựng ({allWords.length})</span>
+                <span>{t('vocab.all_words_tab', { count: allWords.length })}</span>
               </button>
             </div>
 
@@ -266,7 +271,7 @@ const VocabularyPage = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={activeTab === 'decks' ? "Tìm kiếm bộ thẻ..." : "Tìm từ hoặc định nghĩa..."}
+                placeholder={activeTab === 'decks' ? t('vocab.search_decks_placeholder') : t('vocab.search_words_placeholder')}
                 className="w-full pl-8.5 pr-3 py-1.5 text-xs bg-[#FFFDF8] border border-[#DED8CC] rounded-[5px] text-[#25231F] placeholder-[#777168] focus:outline-none focus:border-[#79542E]"
               />
             </div>
@@ -280,7 +285,7 @@ const VocabularyPage = () => {
                 <button
                   onClick={handleBackToDecks}
                   className="p-2 mt-0.5 bg-[#F4EDE1] hover:bg-[#E9DFCF] text-[#79542E] rounded-[5px] transition-colors cursor-pointer"
-                  title="Quay lại danh sách bộ thẻ"
+                  title={t('vocab.back_to_decks')}
                 >
                   <FiArrowLeft className="w-4 h-4" />
                 </button>
@@ -290,37 +295,47 @@ const VocabularyPage = () => {
                       {selectedDeck.name}
                     </h2>
                     <span className="px-2 py-0.5 text-[10px] font-semibold bg-[#F4EDE1] text-[#79542E] border border-[#DED8CC] rounded-[3px]">
-                      {deckCards.length} thẻ
+                      {t('challenges.cards_count', { count: deckCards.length })}
                     </span>
                   </div>
                   <p className="text-xs text-[#777168] mt-1">
-                    {selectedDeck.description || 'Chưa có mô tả cho bộ thẻ này.'}
+                    {selectedDeck.description || t('challenges.no_deck_desc')}
                   </p>
                 </div>
               </div>
 
-              <div className="relative w-full sm:w-64">
-                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#777168]" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Tìm thẻ trong bộ..."
-                  className="w-full pl-8.5 pr-3 py-1.5 text-xs bg-[#FFFDF8] border border-[#DED8CC] rounded-[5px] text-[#25231F] placeholder-[#777168] focus:outline-none focus:border-[#79542E]"
-                />
+              <div className="flex items-center gap-2.5 w-full sm:w-auto">
+                <button
+                  onClick={() => setStudyDeck(selectedDeck)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#79542E] hover:bg-[#634322] text-[#FFFDF8] text-xs font-semibold rounded-[5px] transition-colors cursor-pointer shadow-xs shrink-0"
+                >
+                  <FiPlay className="w-3.5 h-3.5" />
+                  <span>{t('vocab.study_this_deck')}</span>
+                </button>
+
+                <div className="relative w-full sm:w-60">
+                  <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#777168]" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder={t('vocab.search_cards_placeholder')}
+                    className="w-full pl-8.5 pr-3 py-1.5 text-xs bg-[#FFFDF8] border border-[#DED8CC] rounded-[5px] text-[#25231F] placeholder-[#777168] focus:outline-none focus:border-[#79542E]"
+                  />
+                </div>
               </div>
             </div>
 
             {loadingCards ? (
               <div className="py-16 text-center text-[#777168] text-xs">
-                Đang tải thẻ trong bộ...
+                {t('vocab.loading_cards')}
               </div>
             ) : filteredCards.length === 0 ? (
               <div className="bg-[#FFFDF8] border border-dashed border-[#DED8CC] rounded-[5px] p-12 text-center">
                 <FiLayers className="w-8 h-8 text-[#A67C52] mx-auto mb-2 opacity-60" />
-                <h3 className="text-sm font-bold text-[#25231F]">Chưa có thẻ nào trong bộ này</h3>
+                <h3 className="text-sm font-bold text-[#25231F]">{t('vocab.empty_cards_title')}</h3>
                 <p className="text-xs text-[#777168] mt-1 max-w-sm mx-auto">
-                  Hãy xem video bài học và bấm vào một từ vựng để lưu thẻ mới vào bộ từ vựng này.
+                  {t('vocab.empty_cards_desc')}
                 </p>
               </div>
             ) : (
@@ -351,23 +366,23 @@ const VocabularyPage = () => {
                           <button
                             onClick={() => speakWord(vocab.word, vocab.sourceLanguage)}
                             className="p-1.5 text-[#777168] hover:text-[#79542E] hover:bg-[#F4EDE1] rounded-[4px] transition-colors cursor-pointer"
-                            title="Nghe phát âm"
+                            title={t('vocab.listen_tooltip')}
                           >
                             <FiVolume2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
 
                         <div className="mt-2.5 text-xs text-[#25231F] font-medium leading-relaxed">
-                          {vocab.definition || 'Chưa có định nghĩa'}
+                          {vocab.definition || t('vocab.no_definition')}
                         </div>
                       </div>
 
                       <div className="mt-4 pt-3 border-t border-[#F4EDE1] flex items-center justify-between text-[11px] text-[#777168]">
                         <span className="inline-flex items-center gap-1 font-mono uppercase text-[10px] px-1.5 py-0.5 bg-[#FAF6EE] border border-[#DED8CC] rounded-[3px]">
-                          {card.status || 'NEW'}
+                          {card.status || t('vocab.status_new')}
                         </span>
                         <span>
-                          {card.nextReviewDate ? `Ôn: ${card.nextReviewDate}` : 'Chưa ôn tập'}
+                          {card.nextReviewDate ? t('vocab.next_review', { date: card.nextReviewDate }) : t('vocab.not_reviewed')}
                         </span>
                       </div>
                     </div>
@@ -380,21 +395,21 @@ const VocabularyPage = () => {
           <div>
             {loadingDecks ? (
               <div className="py-16 text-center text-[#777168] text-xs">
-                Đang nạp danh sách bộ thẻ...
+                {t('vocab.loading_decks')}
               </div>
             ) : filteredDecks.length === 0 ? (
               <div className="bg-[#FFFDF8] border border-dashed border-[#DED8CC] rounded-[5px] p-12 text-center">
                 <FiFolder className="w-8 h-8 text-[#A67C52] mx-auto mb-2 opacity-60" />
-                <h3 className="text-sm font-bold text-[#25231F]">Chưa tìm thấy bộ thẻ nào</h3>
+                <h3 className="text-sm font-bold text-[#25231F]">{t('vocab.empty_decks_title')}</h3>
                 <p className="text-xs text-[#777168] mt-1 mb-4">
-                  Bấm tạo bộ thẻ mới hoặc lưu một từ vựng bất kỳ để tự động khởi tạo.
+                  {t('vocab.empty_decks_desc')}
                 </p>
                 <button
                   onClick={() => setShowCreateModal(true)}
                   className="inline-flex items-center gap-2 px-3.5 py-2 bg-[#79542E] text-[#FFFDF8] text-xs font-semibold rounded-[5px] hover:bg-[#634322] cursor-pointer"
                 >
                   <FiPlus className="w-3.5 h-3.5" />
-                  <span>Tạo bộ thẻ mới</span>
+                  <span>{t('vocab.create_deck_btn')}</span>
                 </button>
               </div>
             ) : (
@@ -416,7 +431,7 @@ const VocabularyPage = () => {
                               {deck.name}
                             </h3>
                             <span className="text-[11px] text-[#777168]">
-                              {deck.flashCardCount || 0} thẻ ghi nhớ
+                              {deck.flashCardCount || 0} {t('vocab.cards_unit')}
                             </span>
                           </div>
                         </div>
@@ -425,7 +440,7 @@ const VocabularyPage = () => {
                           <button
                             onClick={(e) => handleDeleteDeck(deck.id, e)}
                             className="p-1.5 text-[#777168] hover:text-red-600 hover:bg-red-50 rounded-[4px] opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
-                            title="Xóa bộ thẻ"
+                            title={t('vocab.delete_deck_tooltip')}
                           >
                             <FiTrash2 className="w-3.5 h-3.5" />
                           </button>
@@ -433,20 +448,33 @@ const VocabularyPage = () => {
                       </div>
 
                       <p className="text-xs text-[#777168] mt-3 line-clamp-2 leading-relaxed">
-                        {deck.description || 'Bộ thẻ từ vựng cá nhân.'}
+                        {deck.description || t('vocab.personal_deck_desc')}
                       </p>
                     </div>
 
                     <div className="mt-4 pt-3 border-t border-[#F4EDE1] flex items-center justify-between text-xs">
-                      <span className="text-[#777168] text-[11px]">
-                        Cần ôn hôm nay:
-                      </span>
-                      <span className={`font-semibold px-2 py-0.5 rounded-[3px] text-[11px] ${(deck.dueCount || 0) > 0
-                        ? 'bg-[#F4EDE1] text-[#79542E] border border-[#DED8CC]'
-                        : 'bg-[#FAF6EE] text-[#777168]'
-                        }`}>
-                        {deck.dueCount || 0} từ
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[#777168] text-[11px]">
+                          {t('vocab.due_label')}
+                        </span>
+                        <span className={`font-semibold px-2 py-0.5 rounded-[3px] text-[11px] ${(deck.dueCount || 0) > 0
+                          ? 'bg-[#F4EDE1] text-[#79542E] border border-[#DED8CC]'
+                          : 'bg-[#FAF6EE] text-[#777168]'
+                          }`}>
+                          {deck.dueCount || 0} {t('vocab.words_unit')}
+                        </span>
+                      </div>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setStudyDeck(deck);
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#79542E] hover:bg-[#634322] text-[#FFFDF8] text-[11px] font-semibold rounded-[4px] transition-colors cursor-pointer shadow-xs"
+                      >
+                        <FiPlay className="w-3 h-3" />
+                        <span>{t('vocab.study_btn')}</span>
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -457,14 +485,14 @@ const VocabularyPage = () => {
           <div>
             {loadingWords ? (
               <div className="py-16 text-center text-[#777168] text-xs">
-                Đang nạp danh sách từ vựng...
+                {t('vocab.loading_words')}
               </div>
             ) : filteredWords.length === 0 ? (
               <div className="bg-[#FFFDF8] border border-dashed border-[#DED8CC] rounded-[5px] p-12 text-center">
                 <MdOutlineTranslate className="w-8 h-8 text-[#A67C52] mx-auto mb-2 opacity-60" />
-                <h3 className="text-sm font-bold text-[#25231F]">Chưa có từ vựng nào được lưu</h3>
+                <h3 className="text-sm font-bold text-[#25231F]">{t('vocab.empty_words_title')}</h3>
                 <p className="text-xs text-[#777168] mt-1">
-                  Khi xem video trong mục Lessons, hãy bấm vào một từ bất kỳ và chọn "Lưu vào sổ từ vựng".
+                  {t('vocab.empty_words_desc')}
                 </p>
               </div>
             ) : (
@@ -478,7 +506,7 @@ const VocabularyPage = () => {
                       <button
                         onClick={() => speakWord(item.word, item.sourceLanguage)}
                         className="p-2 mt-0.5 text-[#777168] hover:text-[#79542E] hover:bg-[#F4EDE1] rounded-[4px] transition-colors cursor-pointer"
-                        title="Nghe phát âm"
+                        title={t('vocab.listen_tooltip')}
                       >
                         <FiVolume2 className="w-4 h-4" />
                       </button>
@@ -504,7 +532,7 @@ const VocabularyPage = () => {
 
                     <div className="text-[11px] text-[#777168] flex items-center gap-1.5 sm:self-center shrink-0">
                       <FiClock className="w-3 h-3 text-[#A67C52]" />
-                      <span>{item.createdAt ? new Date(item.createdAt).toLocaleDateString('vi-VN') : ''}</span>
+                      <span>{item.createdAt ? new Date(item.createdAt).toLocaleDateString() : ''}</span>
                     </div>
                   </div>
                 ))}
@@ -518,7 +546,7 @@ const VocabularyPage = () => {
             <div className="bg-[#FFFDF8] border border-[#DED8CC] rounded-[5px] w-full max-w-md p-5 sm:p-6 shadow-xl animate-in fade-in zoom-in-95 duration-150">
               <div className="flex items-center justify-between pb-3 border-b border-[#DED8CC]">
                 <h3 className="text-base font-bold text-[#25231F]">
-                  Tạo bộ thẻ mới
+                  {t('vocab.create_modal_title')}
                 </h3>
                 <button
                   onClick={() => setShowCreateModal(false)}
@@ -538,13 +566,13 @@ const VocabularyPage = () => {
 
                 <div>
                   <label className="block text-xs font-semibold text-[#25231F] mb-1">
-                    Tên bộ thẻ *
+                    {t('vocab.deck_name_label')}
                   </label>
                   <input
                     type="text"
                     value={newDeckName}
                     onChange={(e) => setNewDeckName(e.target.value)}
-                    placeholder="Ví dụ: Từ vựng IELTS Task 1, Daily Life..."
+                    placeholder={t('vocab.deck_name_placeholder')}
                     className="w-full px-3 py-2 text-xs bg-[#FAF6EE] border border-[#DED8CC] rounded-[5px] text-[#25231F] placeholder-[#777168] focus:outline-none focus:border-[#79542E]"
                     autoFocus
                   />
@@ -552,12 +580,12 @@ const VocabularyPage = () => {
 
                 <div>
                   <label className="block text-xs font-semibold text-[#25231F] mb-1">
-                    Mô tả (tùy chọn)
+                    {t('vocab.deck_desc_label')}
                   </label>
                   <textarea
                     value={newDeckDesc}
                     onChange={(e) => setNewDeckDesc(e.target.value)}
-                    placeholder="Mục đích hoặc ghi chú cho bộ thẻ này..."
+                    placeholder={t('vocab.deck_desc_placeholder')}
                     rows={3}
                     className="w-full px-3 py-2 text-xs bg-[#FAF6EE] border border-[#DED8CC] rounded-[5px] text-[#25231F] placeholder-[#777168] focus:outline-none focus:border-[#79542E] resize-none"
                   />
@@ -569,19 +597,34 @@ const VocabularyPage = () => {
                     onClick={() => setShowCreateModal(false)}
                     className="px-3.5 py-1.5 text-xs text-[#555048] hover:text-[#25231F] bg-[#FAF6EE] hover:bg-[#F4EDE1] border border-[#DED8CC] rounded-[5px] transition-colors cursor-pointer"
                   >
-                    Hủy
+                    {t('vocab.cancel_btn')}
                   </button>
                   <button
                     type="submit"
                     disabled={creatingDeck}
                     className="px-4 py-1.5 text-xs font-semibold bg-[#79542E] hover:bg-[#634322] text-[#FFFDF8] rounded-[5px] transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
                   >
-                    {creatingDeck ? 'Đang tạo...' : 'Tạo bộ thẻ'}
+                    {creatingDeck ? t('vocab.creating_btn') : t('vocab.create_btn')}
                   </button>
                 </div>
               </form>
             </div>
           </div>
+        )}
+
+        {studyDeck && (
+          <FlashcardStudyModal
+            isOpen={!!studyDeck}
+            deckId={studyDeck.id}
+            deckName={studyDeck.name}
+            onClose={() => setStudyDeck(null)}
+            onSessionComplete={() => {
+              fetchDecks();
+              if (selectedDeck) {
+                fetchDeckCards(selectedDeck.id);
+              }
+            }}
+          />
         )}
       </div>
     </div>
