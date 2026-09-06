@@ -8,7 +8,8 @@ import {
   FiLogOut, 
   FiChevronDown, 
   FiChevronUp,
-  FiUser
+  FiUser,
+  FiHome
 } from 'react-icons/fi';
 import { 
   HiOutlineBookOpen, 
@@ -70,16 +71,16 @@ const Sidebar = () => {
       <div className={`p-4 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
         {!isCollapsed ? (
           <>
-            <div className="flex items-center gap-2.5">
+            <NavLink to="/" className="flex items-center gap-2.5 cursor-pointer group">
               <img 
                 src="/lingosync-logo.svg" 
                 alt="LingoSync Logo" 
-                className="w-7 h-7 object-contain rounded-[4px] shadow-xs"
+                className="w-7 h-7 object-contain rounded-[4px] shadow-xs group-hover:scale-105 transition-transform"
               />
-              <span className="font-bold text-base text-[#25231F] tracking-tight">
+              <span className="font-bold text-base text-[#25231F] tracking-tight group-hover:text-[#79542E] transition-colors">
                 Lingo<span className="text-[#A67C52] font-semibold">Sync</span>
               </span>
-            </div>
+            </NavLink>
             <button 
               onClick={() => setIsCollapsed(true)}
               className="p-1.5 rounded-[5px] text-[#777168] hover:text-[#25231F] hover:bg-[#F4EDE1] transition-colors cursor-pointer"
@@ -89,17 +90,17 @@ const Sidebar = () => {
             </button>
           </>
         ) : (
-          <button
-            onClick={() => setIsCollapsed(false)}
+          <NavLink
+            to="/"
             className="p-1 rounded-[5px] hover:bg-[#F4EDE1] transition-colors cursor-pointer"
-            title="Bấm để mở rộng Sidebar"
+            title={t('sidebar.home')}
           >
             <img 
               src="/lingosync-logo.svg" 
               alt="LingoSync Logo" 
-              className="w-7 h-7 object-contain rounded-[4px] shadow-xs"
+              className="w-7 h-7 object-contain rounded-[4px] shadow-xs hover:scale-105 transition-transform"
             />
-          </button>
+          </NavLink>
         )}
       </div>
 
@@ -107,6 +108,21 @@ const Sidebar = () => {
         <div>
           {isCollapsed ? (
             <div className="space-y-1">
+              <NavLink
+                to="/"
+                end
+                title={t('sidebar.home')}
+                className={({ isActive }) =>
+                  `flex items-center justify-center p-2 rounded-[5px] text-xs transition-colors ${
+                    isActive
+                      ? 'bg-[#F4EDE1] text-[#25231F] font-bold'
+                      : 'text-[#555048] hover:bg-[#FAF6EE] hover:text-[#25231F]'
+                  }`
+                }
+              >
+                <FiHome className="w-4 h-4" />
+              </NavLink>
+
               <NavLink
                 to="/lessons"
                 title={t('sidebar.lessons')}
@@ -151,10 +167,25 @@ const Sidebar = () => {
             </div>
           ) : (
             <>
+              <NavLink
+                to="/"
+                end
+                className={({ isActive }) =>
+                  `w-full flex items-center gap-2.5 px-3 py-2 rounded-[5px] text-xs font-semibold transition-colors ${
+                    isActive
+                      ? 'bg-[#F4EDE1] text-[#25231F] font-bold'
+                      : 'text-[#555048] hover:bg-[#FAF6EE] hover:text-[#25231F]'
+                  }`
+                }
+              >
+                <FiHome className="w-4 h-4 text-[#79542E]" />
+                <span>{t('sidebar.home')}</span>
+              </NavLink>
+
               <button
                 onClick={() => setLibraryOpen(!libraryOpen)}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-[5px] text-xs font-semibold transition-colors cursor-pointer ${
-                  ['/lessons', '/playlists', '/vocabulary', '/'].some(p => location.pathname === p)
+                  ['/lessons', '/playlists', '/vocabulary'].some(p => location.pathname === p)
                     ? 'bg-[#F4EDE1] text-[#25231F] font-bold'
                     : 'text-[#555048] hover:bg-[#FAF6EE] hover:text-[#25231F]'
                 }`}

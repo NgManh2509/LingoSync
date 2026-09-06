@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { 
   FiPlus, 
   FiTrash2, 
@@ -15,6 +16,7 @@ import { MdOutlineQueueMusic } from 'react-icons/md';
 import apiClient from '../api/apiClient';
 
 const PlaylistsPage = () => {
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const activePlaylistId = searchParams.get('id');
@@ -86,14 +88,14 @@ const PlaylistsPage = () => {
         setSearchParams({ id: res.data.id });
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Không thể tạo playlist');
+      setError(err.response?.data?.message || t('playlists.error_create'));
     } finally {
       setCreating(false);
     }
   };
 
   const handleDeletePlaylist = async (id, name) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa playlist "${name}" không?`)) return;
+    if (!window.confirm(t('playlists.confirm_delete', { name }))) return;
     try {
       await apiClient.delete(`/api/playlists/${id}`);
       if (activePlaylistId === id) {
@@ -101,7 +103,7 @@ const PlaylistsPage = () => {
       }
       fetchPlaylists();
     } catch (err) {
-      alert(err.response?.data?.message || 'Không thể xóa playlist');
+      alert(err.response?.data?.message || t('playlists.error_delete'));
     }
   };
 
@@ -111,7 +113,7 @@ const PlaylistsPage = () => {
       fetchPlaylistDetail(playlistId);
       fetchPlaylists();
     } catch (err) {
-      alert(err.response?.data?.message || 'Không thể xóa video khỏi playlist');
+      alert(err.response?.data?.message || t('playlists.error_remove'));
     }
   };
 
@@ -129,15 +131,15 @@ const PlaylistsPage = () => {
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold text-[#A67C52] uppercase tracking-wider mb-1">
             <MdOutlineQueueMusic className="w-4 h-4" />
-            <span>Thư viện Playlist</span>
+            <span>{t('playlists.library_badge')}</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-serif font-bold text-[#25231F]">
-            {selectedPlaylistDetail ? selectedPlaylistDetail.name : 'Danh sách phát của bạn'}
+            {selectedPlaylistDetail ? selectedPlaylistDetail.name : t('playlists.your_playlists')}
           </h1>
           <p className="text-xs text-[#777168] mt-1">
             {selectedPlaylistDetail 
-              ? (selectedPlaylistDetail.description || 'Quản lý các video trong playlist này') 
-              : 'Tập hợp các video theo lộ trình và chủ đề học tập cá nhân hóa'}
+              ? (selectedPlaylistDetail.description || t('playlists.manage_desc')) 
+              : t('playlists.personalized_desc')}
           </p>
         </div>
 
@@ -149,12 +151,12 @@ const PlaylistsPage = () => {
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-[5px] border border-[#DED8CC] bg-[#FFFDF8] hover:bg-[#F4EDE1] text-xs font-semibold text-[#555048] transition-colors cursor-pointer"
               >
                 <FiArrowLeft className="w-3.5 h-3.5" />
-                <span>Tất cả Playlist</span>
+                <span>{t('playlists.all_playlists')}</span>
               </button>
               <button
                 onClick={() => handleDeletePlaylist(selectedPlaylistDetail.id, selectedPlaylistDetail.name)}
                 className="p-2 rounded-[5px] border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 transition-colors cursor-pointer"
-                title="Xóa Playlist này"
+                title={t('playlists.delete_tooltip')}
               >
                 <FiTrash2 className="w-3.5 h-3.5" />
               </button>
@@ -165,7 +167,7 @@ const PlaylistsPage = () => {
               className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-[5px] bg-[#A67C52] hover:bg-[#79542E] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
             >
               <FiPlus className="w-4 h-4" />
-              <span>Tạo Playlist mới</span>
+              <span>{t('playlists.create_new')}</span>
             </button>
           )}
         </div>
@@ -176,20 +178,20 @@ const PlaylistsPage = () => {
           {loadingDetail ? (
             <div className="py-16 text-center text-[#777168] flex items-center justify-center gap-2 text-xs">
               <FiLoader className="w-4 h-4 animate-spin text-[#A67C52]" />
-              <span>Đang tải video trong playlist...</span>
+              <span>{t('playlists.loading_videos')}</span>
             </div>
           ) : selectedPlaylistDetail.videos?.length === 0 ? (
             <div className="bg-[#FFFDF8] border border-[#DED8CC] rounded-[5px] p-12 text-center">
               <MdOutlineQueueMusic className="w-10 h-10 text-[#A67C52] mx-auto mb-2 opacity-70" />
-              <h3 className="text-sm font-bold text-[#25231F] mb-1">Chưa có video nào trong Playlist này</h3>
+              <h3 className="text-sm font-bold text-[#25231F] mb-1">{t('playlists.empty_videos_title')}</h3>
               <p className="text-xs text-[#777168] max-w-md mx-auto mb-4">
-                Hãy bấm vào nút "Create" ở thanh công cụ bên trái, dán liên kết YouTube và chọn lưu vào playlist này.
+                {t('playlists.empty_videos_desc')}
               </p>
               <button
                 onClick={() => navigate('/lessons')}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-[#FAF6EE] hover:bg-[#F4EDE1] border border-[#DED8CC] rounded-[5px] text-xs font-semibold text-[#79542E] transition-colors cursor-pointer"
               >
-                <span>Xem danh sách bài học</span>
+                <span>{t('playlists.browse_lessons')}</span>
               </button>
             </div>
           ) : (
@@ -223,7 +225,7 @@ const PlaylistsPage = () => {
                           onClick={() => navigate(`/lessons/${item.videoId}`)}
                           className="text-xs font-bold text-[#25231F] line-clamp-2 mb-2 group-hover:text-[#79542E] transition-colors cursor-pointer"
                         >
-                          {item.title || 'Video bài học'}
+                          {item.title || t('playlists.lesson_video')}
                         </h3>
                       </div>
 
@@ -236,7 +238,7 @@ const PlaylistsPage = () => {
                           <button
                             onClick={() => handleRemoveVideo(selectedPlaylistDetail.id, item.videoId)}
                             className="p-1 text-[#777168] hover:text-rose-700 transition-colors cursor-pointer"
-                            title="Xóa khỏi playlist"
+                            title={t('playlists.remove_tooltip')}
                           >
                             <FiTrash2 className="w-3.5 h-3.5" />
                           </button>
@@ -244,7 +246,7 @@ const PlaylistsPage = () => {
                             onClick={() => navigate(`/lessons/${item.videoId}`)}
                             className="font-medium text-[#79542E] hover:underline cursor-pointer"
                           >
-                            Học ngay →
+                            {t('playlists.study_now')}
                           </button>
                         </div>
                       </div>
@@ -260,21 +262,21 @@ const PlaylistsPage = () => {
           {loading ? (
             <div className="py-16 text-center text-[#777168] flex items-center justify-center gap-2 text-xs">
               <FiLoader className="w-4 h-4 animate-spin text-[#A67C52]" />
-              <span>Đang tải danh sách playlist...</span>
+              <span>{t('playlists.loading_playlists')}</span>
             </div>
           ) : playlists.length === 0 ? (
             <div className="bg-[#FFFDF8] border border-[#DED8CC] rounded-[5px] p-12 text-center">
               <FiFolder className="w-10 h-10 text-[#A67C52] mx-auto mb-2 opacity-70" />
-              <h3 className="text-sm font-bold text-[#25231F] mb-1">Bạn chưa có Playlist nào</h3>
+              <h3 className="text-sm font-bold text-[#25231F] mb-1">{t('playlists.empty_playlists_title')}</h3>
               <p className="text-xs text-[#777168] max-w-md mx-auto mb-4">
-                Hãy tạo playlist đầu tiên để gom nhóm các video cùng chủ đề và theo dõi lộ trình học tập.
+                {t('playlists.empty_playlists_desc')}
               </p>
               <button
                 onClick={() => setShowCreateModal(true)}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-[#A67C52] hover:bg-[#79542E] text-white rounded-[5px] text-xs font-semibold transition-colors cursor-pointer shadow-xs"
               >
                 <FiPlus className="w-3.5 h-3.5" />
-                <span>Tạo Playlist</span>
+                <span>{t('playlists.create_btn')}</span>
               </button>
             </div>
           ) : (
@@ -291,7 +293,7 @@ const PlaylistsPage = () => {
                         <MdOutlineQueueMusic className="w-4 h-4" />
                       </div>
                       <span className="text-[11px] font-semibold bg-[#FAF6EE] text-[#79542E] border border-[#DED8CC] px-2 py-0.5 rounded-[3px]">
-                        {pl.totalVideos || 0} bài học
+                        {t('playlists.lessons_count', { count: pl.totalVideos || 0 })}
                       </span>
                     </div>
 
@@ -299,16 +301,16 @@ const PlaylistsPage = () => {
                       {pl.name}
                     </h3>
                     <p className="text-xs text-[#777168] line-clamp-2 leading-relaxed">
-                      {pl.description || 'Không có mô tả'}
+                      {pl.description || t('playlists.no_description')}
                     </p>
                   </div>
 
                   <div className="pt-4 border-t border-[#DED8CC]/60 mt-4 flex items-center justify-between text-[11px] text-[#777168]">
                     <span>
-                      {new Date(pl.createdAt).toLocaleDateString('vi-VN')}
+                      {new Date(pl.createdAt).toLocaleDateString()}
                     </span>
                     <span className="font-semibold text-[#79542E] group-hover:translate-x-0.5 transition-transform">
-                      Mở playlist →
+                      {t('playlists.open_playlist')}
                     </span>
                   </div>
                 </div>
@@ -324,7 +326,7 @@ const PlaylistsPage = () => {
             <div className="p-5 border-b border-[#DED8CC] flex items-center justify-between bg-[#FAF6EE]/70">
               <h3 className="text-sm font-bold text-[#25231F] flex items-center gap-2">
                 <FiFolder className="w-4 h-4 text-[#A67C52]" />
-                <span>Tạo Playlist mới</span>
+                <span>{t('playlists.modal_title')}</span>
               </h3>
               <button
                 onClick={() => setShowCreateModal(false)}
@@ -337,27 +339,27 @@ const PlaylistsPage = () => {
             <form onSubmit={handleCreatePlaylist} className="p-5 flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-bold text-[#25231F]">
-                  Tên Playlist <span className="text-rose-600">*</span>
+                  {t('playlists.name_label')} <span className="text-rose-600">*</span>
                 </label>
                 <input
                   type="text"
                   required
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  placeholder="Ví dụ: Tiếng Anh giao tiếp công sở"
+                  placeholder={t('playlists.name_placeholder')}
                   className="w-full bg-[#FFF9ED] border border-[#DED8CC] rounded-[5px] px-3.5 py-2 text-xs text-[#25231F] focus:outline-none focus:bg-[#FFFDF8] focus:border-[#A67C52] transition-colors"
                 />
               </div>
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-bold text-[#25231F]">
-                  Mô tả (Tùy chọn)
+                  {t('playlists.desc_label')}
                 </label>
                 <textarea
                   rows={3}
                   value={newDesc}
                   onChange={(e) => setNewDesc(e.target.value)}
-                  placeholder="Mô tả mục tiêu học tập của playlist này..."
+                  placeholder={t('playlists.desc_placeholder')}
                   className="w-full bg-[#FFF9ED] border border-[#DED8CC] rounded-[5px] px-3.5 py-2 text-xs text-[#25231F] focus:outline-none focus:bg-[#FFFDF8] focus:border-[#A67C52] transition-colors resize-none"
                 />
               </div>
@@ -375,7 +377,7 @@ const PlaylistsPage = () => {
                   onClick={() => setShowCreateModal(false)}
                   className="px-3.5 py-2 rounded-[5px] border border-[#DED8CC] bg-[#FAF6EE] hover:bg-[#F4EDE1] text-xs font-semibold text-[#555048] transition-colors cursor-pointer"
                 >
-                  Hủy
+                  {t('playlists.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -385,10 +387,10 @@ const PlaylistsPage = () => {
                   {creating ? (
                     <>
                       <FiLoader className="w-3.5 h-3.5 animate-spin" />
-                      <span>Đang tạo...</span>
+                      <span>{t('playlists.creating')}</span>
                     </>
                   ) : (
-                    <span>Tạo Playlist</span>
+                    <span>{t('playlists.create_btn')}</span>
                   )}
                 </button>
               </div>

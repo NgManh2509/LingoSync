@@ -24,8 +24,10 @@ import apiClient from '../api/apiClient';
 import CreateVideoModal from '../components/common/CreateVideoModal';
 import AddToPlaylistModal from '../components/common/AddToPlaylistModal';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 const LessonScreen = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { videoId } = useParams();
   const navigate = useNavigate();
@@ -432,7 +434,7 @@ const LessonScreen = () => {
           ...prev,
           loading: false,
           meaning: '',
-          error: 'Không thể tải định nghĩa'
+          error: t('lessons.no_definition')
         };
       });
     }
@@ -478,10 +480,10 @@ const LessonScreen = () => {
           <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl sm:text-[28px] font-bold text-[#25231F] tracking-tight">
-                Lessons & Video Library
+                {t('lessons.header_title')}
               </h1>
               <p className="text-xs sm:text-[13px] text-[#777168] mt-1">
-                Học ngoại ngữ qua video phụ đề song ngữ đồng bộ thời gian thực
+                {t('lessons.header_subtitle')}
               </p>
             </div>
             <button
@@ -489,21 +491,21 @@ const LessonScreen = () => {
               className="flex items-center gap-2 px-4 py-2.5 rounded-[5px] bg-[#A67C52] hover:bg-[#79542E] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs shrink-0 self-start sm:self-auto"
             >
               <FiPlus className="w-4 h-4" />
-              <span>Thêm video bài học</span>
+              <span>{t('lessons.add_video_btn')}</span>
             </button>
           </header>
 
           <div className="bg-[#FFFDF8] border border-[#DED8CC] rounded-[5px] p-6 shadow-xs">
             <h2 className="text-sm font-bold text-[#25231F] mb-1 flex items-center gap-2">
               <FiLink className="w-4 h-4 text-[#A67C52]" />
-              <span>Thêm video bài học từ YouTube</span>
+              <span>{t('lessons.add_from_youtube')}</span>
             </h2>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-4">
               <p className="text-xs text-[#777168]">
-                Dán liên kết video YouTube bất kỳ để hệ thống tạo phụ đề song ngữ
+                {t('lessons.add_youtube_desc')}
               </p>
               <div className="flex items-center gap-1.5 text-[11px] font-medium text-[#79542E] bg-[#FAF6EE] border border-[#DED8CC] px-2.5 py-1 rounded-[4px] self-start sm:self-auto">
-                <span>Dịch sang:</span>
+                <span>{t('lessons.translate_to')}</span>
                 <span className="font-bold">
                   {user?.nativeLanguage === 'en' ? '🇬🇧 English' : '🇻🇳 Tiếng Việt'}
                 </span>
@@ -516,7 +518,7 @@ const LessonScreen = () => {
                 required
                 value={importUrl}
                 onChange={(e) => setImportUrl(e.target.value)}
-                placeholder="https://www.youtube.com/watch?v=..."
+                placeholder={t('lessons.youtube_placeholder')}
                 className="flex-1 text-xs bg-[#FFF9ED] border border-[#DED8CC] rounded-[5px] px-3.5 py-2.5 text-[#25231F] placeholder-[#777168]/60 focus:outline-none focus:bg-[#FFFDF8] focus:border-[#A67C52] transition-colors"
               />
               <button
@@ -527,12 +529,12 @@ const LessonScreen = () => {
                 {isProcessing ? (
                   <>
                     <FiLoader className="w-3.5 h-3.5 animate-spin" />
-                    <span>Đang xử lý...</span>
+                    <span>{t('lessons.processing')}</span>
                   </>
                 ) : (
                   <>
                     <FiPlus className="w-3.5 h-3.5" />
-                    <span>Tạo bài học</span>
+                    <span>{t('lessons.create_lesson')}</span>
                   </>
                 )}
               </button>
@@ -548,20 +550,20 @@ const LessonScreen = () => {
 
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-bold text-[#25231F]">Bài học gần đây</h2>
-              <span className="text-xs text-[#777168]">{historyList.length} bài học</span>
+              <h2 className="text-base font-bold text-[#25231F]">{t('lessons.recent_lessons')}</h2>
+              <span className="text-xs text-[#777168]">{t('lessons.lessons_count', { count: historyList.length })}</span>
             </div>
 
             {loadingHistory ? (
               <div className="py-12 text-center text-[#777168] flex items-center justify-center gap-2 text-xs">
                 <FiLoader className="w-4 h-4 animate-spin" />
-                <span>Đang tải danh sách bài học...</span>
+                <span>{t('lessons.loading_lessons')}</span>
               </div>
             ) : historyList.length === 0 ? (
               <div className="bg-[#FFFDF8] border border-[#DED8CC] rounded-[5px] p-8 text-center">
                 <FiBookOpen className="w-8 h-8 text-[#A67C52] mx-auto mb-2 opacity-80" />
-                <h3 className="text-sm font-bold text-[#25231F] mb-1">Chưa có bài học nào</h3>
-                <p className="text-xs text-[#777168]">Hãy dán liên kết YouTube ở trên để bắt đầu bài học đầu tiên của bạn.</p>
+                <h3 className="text-sm font-bold text-[#25231F] mb-1">{t('lessons.empty_lessons_title')}</h3>
+                <p className="text-xs text-[#777168]">{t('lessons.empty_lessons_desc')}</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -593,7 +595,7 @@ const LessonScreen = () => {
 
                       <div className="p-4">
                         <h3 className="text-xs font-bold text-[#25231F] line-clamp-2 mb-2 group-hover:text-[#79542E] transition-colors">
-                          {item.title || 'Video bài học'}
+                          {item.title || 'Video'}
                         </h3>
 
                         <div className="flex items-center justify-between text-[11px] text-[#777168]">
@@ -601,7 +603,7 @@ const LessonScreen = () => {
                             <FiClock className="w-3 h-3 text-[#A67C52]" />
                             {item.durationSeconds ? formatTime(item.durationSeconds) : '--:--'}
                           </span>
-                          <span className="font-medium text-[#79542E]">Học tiếp →</span>
+                          <span className="font-medium text-[#79542E]">{t('lessons.continue_study')}</span>
                         </div>
                       </div>
                     </div>
@@ -628,7 +630,7 @@ const LessonScreen = () => {
     return (
       <div className="min-h-screen bg-[#F7F3EA] flex items-center justify-center text-[#777168] gap-2 text-xs font-medium">
         <FiLoader className="w-4 h-4 animate-spin text-[#A67C52]" />
-        <span>Đang tải nội dung bài học...</span>
+        <span>{t('lessons.loading_lesson_detail')}</span>
       </div>
     );
   }
@@ -638,13 +640,13 @@ const LessonScreen = () => {
       <div className="min-h-screen bg-[#F7F3EA] text-[#25231F] p-8 flex flex-col items-center justify-center text-center">
         <div className="bg-[#FFFDF8] border border-[#DED8CC] rounded-[5px] p-8 max-w-md w-full shadow-xs">
           <FiAlertCircle className="w-8 h-8 text-rose-500 mx-auto mb-3" />
-          <h2 className="text-base font-bold mb-1">Không tìm thấy bài học</h2>
-          <p className="text-xs text-[#777168] mb-5">{error || 'Video không tồn tại hoặc đã bị xóa.'}</p>
+          <h2 className="text-base font-bold mb-1">{t('lessons.not_found_title')}</h2>
+          <p className="text-xs text-[#777168] mb-5">{error || t('lessons.not_found_desc')}</p>
           <button
             onClick={() => navigate('/lessons')}
             className="w-full py-2 px-4 rounded-[5px] bg-[#A67C52] hover:bg-[#79542E] text-white text-xs font-semibold transition-colors cursor-pointer"
           >
-            Quay lại danh sách bài học
+            {t('lessons.back_to_lessons')}
           </button>
         </div>
       </div>
@@ -678,7 +680,7 @@ const LessonScreen = () => {
               className="inline-flex items-center gap-1.5 text-xs text-[#777168] hover:text-[#25231F] mb-2 transition-colors cursor-pointer"
             >
               <FiArrowLeft className="w-3.5 h-3.5" />
-              <span>Tất cả bài học</span>
+              <span>{t('lessons.all_lessons')}</span>
             </button>
             <h1 className="text-2xl sm:text-[28px] font-bold text-[#25231F] tracking-tight leading-tight">
               {videoData.title || 'Video Lesson'}
@@ -690,7 +692,7 @@ const LessonScreen = () => {
             className="flex items-center gap-2 px-3.5 py-2 rounded-[5px] border border-[#DED8CC] bg-[#FFFDF8] hover:bg-[#F4EDE1] text-[#79542E] text-xs font-semibold transition-colors cursor-pointer shadow-2xs self-start sm:self-auto shrink-0"
           >
             <MdOutlineQueueMusic className="w-4 h-4" />
-            <span>Lưu vào Playlist</span>
+            <span>{t('lessons.save_to_playlist')}</span>
           </button>
         </header>
 
@@ -782,9 +784,9 @@ const LessonScreen = () => {
               <div className="flex items-center gap-2.5">
                 <button
                   onClick={cycleSubtitleMode}
-                  title={`Chế độ phụ đề: ${subtitlesMode === 'dual' ? 'Song ngữ (Bilingual)' :
-                    subtitlesMode === 'original' ? 'Chỉ tiếng gốc' :
-                      subtitlesMode === 'translated' ? 'Chỉ bản dịch' : 'Tắt phụ đề'
+                  title={`${t('lessons.subtitle_mode_title')}: ${subtitlesMode === 'dual' ? t('lessons.mode_dual') :
+                    subtitlesMode === 'original' ? t('lessons.mode_original') :
+                      subtitlesMode === 'translated' ? t('lessons.mode_translated') : t('lessons.mode_off')
                     }`}
                   className={`px-2 py-0.5 rounded-[3px] text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer ${subtitlesMode !== 'off'
                     ? 'bg-[#A67C52] text-white shadow-xs'
@@ -820,14 +822,14 @@ const LessonScreen = () => {
               <div className="flex items-center gap-2">
                 <FiBookOpen className="w-4 h-4 text-[#79542E]" />
                 <h3 className="text-xs font-bold text-[#25231F] uppercase tracking-wider">
-                  Transcript ({subtitlesList.length})
+                  {t('lessons.transcript_title')} ({subtitlesList.length})
                 </h3>
               </div>
               <button
                 onClick={() => setShowSearch(!showSearch)}
                 className={`p-1.5 rounded-[4px] transition-colors cursor-pointer ${showSearch ? 'bg-[#DED8CC] text-[#25231F]' : 'text-[#777168] hover:text-[#25231F] hover:bg-white/60'
                   }`}
-                title="Search transcript"
+                title={t('lessons.search_tooltip')}
               >
                 <FiSearch className="w-3.5 h-3.5" />
               </button>
@@ -840,7 +842,7 @@ const LessonScreen = () => {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Tìm kiếm từ khóa trong phụ đề..."
+                    placeholder={t('lessons.search_transcript')}
                     className="w-full text-xs bg-white border border-[#DED8CC] rounded-[4px] py-1.5 pl-7 pr-3 text-[#25231F] placeholder-[#777168]/70 focus:outline-none focus:border-[#A67C52]"
                   />
                   <FiSearch className="w-3.5 h-3.5 absolute left-2 top-2 text-[#777168]" />
@@ -854,7 +856,7 @@ const LessonScreen = () => {
             >
               {filteredSubtitles.length === 0 ? (
                 <div className="py-12 text-center text-[#777168] text-xs">
-                  Không tìm thấy phụ đề nào.
+                  {t('lessons.no_subtitles_found')}
                 </div>
               ) : (
                 filteredSubtitles.map((item, index) => {
@@ -919,7 +921,7 @@ const LessonScreen = () => {
               </div>
               <div className="flex items-center gap-1.5">
                 <FiBookOpen className="w-3.5 h-3.5 text-[#A67C52]" />
-                <span>{subtitlesList.length} câu phụ đề</span>
+                <span>{t('lessons.subtitle_lines_count', { count: subtitlesList.length })}</span>
               </div>
             </div>
           </div>
@@ -930,7 +932,7 @@ const LessonScreen = () => {
               className="flex items-center justify-center gap-2 px-3.5 py-2 border border-[#DED8CC] bg-[#FFFDF8] hover:bg-[#EFE9DD] text-[#25231F] rounded-[5px] text-xs font-semibold transition-colors cursor-pointer min-h-[38px]"
             >
               <MdOutlineQueueMusic className="w-4 h-4 text-[#A67C52]" />
-              <span>Lưu vào Playlist</span>
+              <span>{t('lessons.save_to_playlist')}</span>
             </button>
           </div>
         </div>
@@ -953,7 +955,7 @@ const LessonScreen = () => {
               )}
               <button
                 onClick={() => speakWord(selectedWord.baseWord || selectedWord.word, selectedWord.sourceLang)}
-                title="Nghe phát âm"
+                title={t('lessons.listen_pronunciation')}
                 className="p-1 hover:bg-[#F4EDE1] rounded text-[#A67C52] hover:text-[#79542E] transition-colors cursor-pointer"
               >
                 <FiVolume2 className="w-4 h-4" />
@@ -970,20 +972,20 @@ const LessonScreen = () => {
           <div className="space-y-2.5 mb-3.5 text-xs">
             {selectedWord.baseWord && selectedWord.baseWord.toLowerCase() !== selectedWord.word.toLowerCase() && (
               <div className="flex items-center gap-1.5 text-[11px] text-[#777168]">
-                <span>Từ nguyên mẫu:</span>
+                <span>{t('lessons.base_word')}</span>
                 <span className="font-semibold text-[#25231F]">{selectedWord.baseWord}</span>
               </div>
             )}
 
             <div className="bg-[#FAF6EE] p-2.5 rounded-[4px] border border-[#EBDCCB]/50">
               <p className="text-[10px] font-bold uppercase text-[#A67C52] tracking-wider mb-1 flex items-center justify-between">
-                <span>Định nghĩa</span>
+                <span>{t('lessons.definition')}</span>
                 <span className="text-[9px] text-[#777168] font-normal uppercase">{selectedWord.targetLang}</span>
               </p>
               {selectedWord.loading ? (
                 <div className="flex items-center gap-2 text-[#777168] py-0.5">
                   <FiLoader className="w-3.5 h-3.5 animate-spin text-[#A67C52]" />
-                  <span className="text-[11px]">Đang tra cứu từ điển...</span>
+                  <span className="text-[11px]">{t('lessons.looking_up')}</span>
                 </div>
               ) : selectedWord.meaning ? (
                 <p className="text-sm font-semibold text-[#25231F] leading-snug">
@@ -991,14 +993,14 @@ const LessonScreen = () => {
                 </p>
               ) : (
                 <p className="text-xs text-[#777168] italic">
-                  {selectedWord.error || 'Không tìm thấy định nghĩa'}
+                  {selectedWord.error || t('lessons.no_definition')}
                 </p>
               )}
             </div>
 
             {selectedWord.context && (
               <div>
-                <p className="text-[10px] font-bold uppercase text-[#777168] tracking-wider mb-0.5">Ngữ cảnh câu</p>
+                <p className="text-[10px] font-bold uppercase text-[#777168] tracking-wider mb-0.5">{t('lessons.sentence_context')}</p>
                 <p className="text-[#25231F] font-medium leading-snug italic text-[11px] bg-white/60 p-2 rounded border border-[#DED8CC]/40">
                   "{selectedWord.context}"
                 </p>
@@ -1022,12 +1024,12 @@ const LessonScreen = () => {
             {wordSaved ? (
               <>
                 <FiCheck className="w-3.5 h-3.5" />
-                <span>Đã lưu vào từ vựng</span>
+                <span>{t('lessons.saved_to_vocab')}</span>
               </>
             ) : (
               <>
                 <FiPlus className="w-3.5 h-3.5" />
-                <span>{isSavingWord ? 'Đang lưu...' : 'Lưu vào sổ từ vựng'}</span>
+                <span>{isSavingWord ? t('lessons.saving') : t('lessons.save_to_vocab')}</span>
               </>
             )}
           </button>
