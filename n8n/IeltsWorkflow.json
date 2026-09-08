@@ -20,7 +20,20 @@
     },
     {
       "parameters": {
-        "url": "https://ieltsmaterial.com/ielts-writing-practice-test/",
+        "jsCode": "return [\n  { json: { url: 'https://ieltsmaterial.com/ielts-sample-essays/' } },\n  { json: { url: 'https://ieltsmaterial.com/ielts-writing-practice-test/' } }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -560,
+        -192
+      ],
+      "id": "e1f2a3b4-1111-2222-3333-444455556666",
+      "name": "Trang nguồn"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url || 'https://ieltsmaterial.com/ielts-sample-essays/' }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -45,7 +58,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
-        -464,
+        -380,
         -192
       ],
       "id": "9367fb09-36a0-429f-9d8f-fa8f7708f702",
@@ -53,16 +66,30 @@
     },
     {
       "parameters": {
-        "jsCode": "const html = $input.first().json.data || '';\n\nconst matches = [...html.matchAll(/href=[\"'](https:\\/\\/ieltsmaterial\\.com\\/[^\"']*practice-test[^\"']*)[\"']/gi)].map(m => m[1]);\n\nconst uniqueUrls = [...new Set(matches)].filter(url => \n  url !== 'https://ieltsmaterial.com/ielts-writing-practice-test/' && \n  !url.includes('/ielts-practice-tests/')\n);\n\nreturn uniqueUrls.map(url => ({\n  json: { url }\n}));\n"
+        "jsCode": "const items = $input.all();\nlet allMatches = [];\n\nfor (const item of items) {\n  const html = item.json.data || '';\n  const matches = [...html.matchAll(/href=[\"'](https:\\/\\/ieltsmaterial\\.com\\/[^\"']*)[\"']/gi)].map(m => m[1]);\n  allMatches.push(...matches);\n}\n\nconst excludePatterns = [\n  'task-1',\n  'general',\n  'how-to',\n  'difference-between',\n  'structure-ielts',\n  'writing-essay-evaluation',\n  '6-secrets',\n  '/category/',\n  '/tag/',\n  '/author/',\n  'ielts-sample-essays',\n  'ielts-writing-practice-test',\n  '/writing/writing-task-2/',\n  'recent-ielts-topics-in-writing-task-2',\n  'ielts-practice-tests',\n  'ielts-opinion-essay',\n  'discussion-essay-topics',\n  'problem-solution-essay',\n  'advantage-and-disadvantage-essays',\n  'direct-question-essay',\n  'ielts-writing-task-2-opinion-essays'\n];\n\nconst uniqueUrls = [...new Set(allMatches)].filter(url => {\n  const lower = url.toLowerCase();\n\n  for (const pat of excludePatterns) {\n    if (lower.includes(pat)) return false;\n  }\n\n  const isTask2 = (\n    lower.includes('writing-task-2') ||\n    lower.includes('writing-2-practice-test') ||\n    lower.includes('task-2') ||\n    lower.includes('practice-test-17-band-8') ||\n    lower.includes('practice-test-18-band-8') ||\n    (lower.includes('essay') && (\n      lower.includes('band-8') ||\n      lower.includes('band-9') ||\n      lower.includes('sample-essay') ||\n      lower.includes('discussion') ||\n      lower.includes('opinion') ||\n      lower.includes('problem-solution')\n    ))\n  );\n\n  return isTask2;\n});\n\nreturn uniqueUrls.map(url => ({\n  json: { url }\n}));\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -240,
+        -200,
         -192
       ],
       "id": "fd40b5b8-e263-499b-9114-321b6c40072a",
       "name": "lọc link"
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -16,
+        -192
+      ],
+      "id": "4010a932-e574-406a-95eb-82de387e1323",
+      "name": "Loop Over Items"
     },
     {
       "parameters": {
@@ -91,7 +118,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
-        -16,
+        208,
         -192
       ],
       "id": "595369a7-94bf-40ff-a716-786ab5456a7e",
@@ -100,12 +127,12 @@
     },
     {
       "parameters": {
-        "jsCode": "const html = $input.item.json.data || '';\n\nconst articleMatch = html.match(/<article[^>]*>([\\s\\S]*?)<\\/article>/i);\nconst rawArticle = articleMatch ? articleMatch[1] : html;\n\nconst cleanText = rawArticle\n  .replace(/<script\\b[^<]*(?:(?!<\\/script>)<[^<]*)*<\\/script>/gi, '')\n  .replace(/<style\\b[^<]*(?:(?!<\\/style>)<[^<]*)*<\\/style>/gi, '')\n  .replace(/<[^>]+>/g, ' ')\n  .replace(/&nbsp;/g, ' ')\n  .replace(/&amp;/g, '&')\n  .replace(/&quot;/g, '\"')\n  .replace(/&#39;|&rsquo;|&lsquo;/g, \"'\")\n  .replace(/\\s+/g, ' ')\n  .trim();\n\nlet sourceUrl = '';\ntry {\n  sourceUrl = $('lọc link').item.json.url || '';\n} catch (e) {\n  sourceUrl = $input.item.json.url || '';\n}\n\nreturn {\n  json: {\n    clean_article_text: cleanText,\n    source_url: sourceUrl\n  }\n};\n"
+        "jsCode": "const html = $input.item.json.data || '';\n\nconst articleMatch = html.match(/<article[^>]*>([\\s\\S]*?)<\\/article>/i);\nconst rawArticle = articleMatch ? articleMatch[1] : html;\n\nconst cleanText = rawArticle\n  .replace(/<script\\b[^>]*>[\\s\\S]*?<\\/script>/gi, '')\n  .replace(/<style\\b[^>]*>[\\s\\S]*?<\\/style>/gi, '')\n  .replace(/<[^>]+>/g, ' ')\n  .replace(/&nbsp;/g, ' ')\n  .replace(/&amp;/g, '&')\n  .replace(/&quot;/g, '\"')\n  .replace(/&#39;|&rsquo;|&lsquo;/g, \"'\")\n  .replace(/\\s+/g, ' ')\n  .trim();\n\nlet sourceUrl = '';\ntry {\n  sourceUrl = $('Loop Over Items').item.json.url || '';\n} catch (e) {\n  sourceUrl = $json.url || '';\n}\n\nreturn {\n  json: {\n    clean_article_text: cleanText,\n    source_url: sourceUrl\n  }\n};\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        208,
+        432,
         -192
       ],
       "id": "066d1914-74b3-43c5-a76c-b8f89d8bf6b9",
@@ -113,22 +140,8 @@
     },
     {
       "parameters": {
-        "batchSize": 2,
-        "options": {}
-      },
-      "type": "n8n-nodes-base.splitInBatches",
-      "typeVersion": 3,
-      "position": [
-        432,
-        -192
-      ],
-      "id": "4010a932-e574-406a-95eb-82de387e1323",
-      "name": "Loop Over Items"
-    },
-    {
-      "parameters": {
         "promptType": "define",
-        "text": "=Extract the IELTS Writing task details from the provided text into a clean JSON object.\nOnly extract the top 1 or 2 highest band sample essays (e.g. Band 8 or Band 9). Skip lower band essays.\n\nCRITICAL INSTRUCTIONS:\n1. \"question\": Extract the exact writing prompt.\n2. \"sample_answers\": For each sample essay found, extract the FULL VERBATIM essay text into the \"essay\" field. DO NOT summarize. Keep all paragraphs intact.\n3. Do not include general tips, advice, or word count explanations.\n\nArticle text:\n{{ $json.clean_article_text }}",
+        "text": "=Extract IELTS Writing Task 2 essay details from the provided text into a clean JSON object.\nCRITICAL: This MUST be IELTS Writing Task 2 (Opinion, Discussion, Problem-Solution, Advantage-Disadvantage, Direct Question essay).\nDO NOT extract Task 1 (charts, tables, diagrams, maps, or graph descriptions). If any Task 1 content exists, ignore it and extract ONLY Task 2.\nOnly extract the highest band sample essays (e.g. Band 8 or Band 9). Skip lower band essays.\n\nCRITICAL INSTRUCTIONS:\n1. \"task\": Always \"Task 2\".\n2. \"essay_type\": Specific essay type (e.g. \"Opinion Essay\", \"Discussion Essay\", \"Problem-Solution\", \"Advantage-Disadvantage\", \"Direct Question\").\n3. \"title\": A concise, engaging title for the essay topic (e.g. \"Air Travel Restrictions\", \"Childcare Courses for Both Parents\", \"Commercial Places in City Planning\").\n4. \"question\": Extract the exact IELTS Writing Task 2 essay prompt/question.\n5. \"outline\": Object with concise structure for \"introduction\", \"body\", and \"conclusion\".\n6. \"sample_answers\": For each sample essay found, extract the FULL VERBATIM essay text into the \"essay\" field with its band score in \"band\". DO NOT summarize. Keep all paragraphs intact.\n7. \"vocabulary\": Array of key topical vocabulary words or collocations extracted from the article.\n\nArticle text:\n{{ $json.clean_article_text }}",
         "batching": {}
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
@@ -138,7 +151,10 @@
         -192
       ],
       "id": "05b75524-2b23-4bf1-a251-d1d421676b37",
-      "name": "Basic LLM Chain"
+      "name": "Basic LLM Chain",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 15000
     },
     {
       "parameters": {
@@ -178,7 +194,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const rawText = $json.response?.generations?.[0]?.[0]?.text || $json.text || '';\nconst cleanJson = rawText.replace(/```json\\s*|```/g, '').trim();\n\nlet parsed = {};\ntry {\n  parsed = JSON.parse(cleanJson);\n} catch (e) {\n  parsed = { raw_output: rawText, parse_error: e.message };\n}\n\nlet sourceUrl = '';\ntry {\n  sourceUrl = $('Code in JavaScript').item.json.source_url || '';\n} catch (e) {\n  sourceUrl = $json.source_url || '';\n}\n\nreturn {\n  json: {\n    ...parsed,\n    source_url: sourceUrl\n  }\n};\n"
+        "jsCode": "const rawText = $json.response?.generations?.[0]?.[0]?.text || $json.text || '';\nconst cleanJson = rawText.replace(/```json\\s*|```/g, '').trim();\n\nlet parsed = {};\ntry {\n  parsed = JSON.parse(cleanJson);\n} catch (e) {\n  parsed = { raw_output: rawText, parse_error: e.message };\n}\n\nlet sourceUrl = '';\ntry {\n  sourceUrl = $('Code in JavaScript').item.json.source_url || '';\n} catch (e) {\n  sourceUrl = $json.source_url || '';\n}\n\nreturn {\n  json: {\n    task_type: 'Task 2',\n    essay_type: parsed.essay_type || 'Opinion Essay',\n    title: parsed.title || 'IELTS Writing Task 2 Essay',\n    question: parsed.question || '',\n    outline: parsed.outline || {},\n    sample_answers: Array.isArray(parsed.sample_answers) ? parsed.sample_answers : [],\n    vocabulary: Array.isArray(parsed.vocabulary) ? parsed.vocabulary : [],\n    source_url: sourceUrl\n  }\n};\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -191,13 +207,37 @@
     },
     {
       "parameters": {
-        "amount": 2.5,
+        "operation": "executeQuery",
+        "query": "INSERT INTO ielts_writing_tasks (\n  task_type, essay_type, title, question, outline, sample_answers, vocabulary, source_url, updated_at\n)\nVALUES (\n  $1, $2, $3, $4, $5::jsonb, $6::jsonb, $7::jsonb, $8, NOW()\n)\nON CONFLICT (source_url) \nDO UPDATE SET\n  task_type = EXCLUDED.task_type,\n  essay_type = EXCLUDED.essay_type,\n  title = EXCLUDED.title,\n  question = EXCLUDED.question,\n  outline = EXCLUDED.outline,\n  sample_answers = EXCLUDED.sample_answers,\n  vocabulary = EXCLUDED.vocabulary,\n  updated_at = NOW()\nRETURNING id, title, task_type;",
+        "options": {
+          "queryReplacement": "={{ [ $json.task_type, $json.essay_type, $json.title, $json.question, JSON.stringify($json.outline), JSON.stringify($json.sample_answers), JSON.stringify($json.vocabulary), $json.source_url ] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1080,
+        -192
+      ],
+      "id": "e9b2c3d4-5678-4abc-9def-0123456789ab",
+      "name": "Save to PostgreSQL",
+      "credentials": {
+        "postgres": {
+          "id": "postgres-account",
+          "name": "Postgres account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "amount": 60,
         "unit": "seconds"
       },
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        1080,
+        1280,
         -192
       ],
       "id": "386e7014-da72-47c5-8b7d-696c791c1ef9",
@@ -210,7 +250,7 @@
       "main": [
         [
           {
-            "node": "lấy link",
+            "node": "Trang nguồn",
             "type": "main",
             "index": 0
           }
@@ -230,6 +270,18 @@
     },
     "lọc link": {
       "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
         [
           {
             "node": "lấy bài",
@@ -254,18 +306,6 @@
       "main": [
         [
           {
-            "node": "Loop Over Items",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Loop Over Items": {
-      "main": [
-        [],
-        [
-          {
             "node": "Basic LLM Chain",
             "type": "main",
             "index": 0
@@ -285,6 +325,17 @@
       ]
     },
     "Parse LLM JSON": {
+      "main": [
+        [
+          {
+            "node": "Save to PostgreSQL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to PostgreSQL": {
       "main": [
         [
           {
@@ -323,6 +374,17 @@
           {
             "node": "Basic LLM Chain",
             "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trang nguồn": {
+      "main": [
+        [
+          {
+            "node": "lấy link",
+            "type": "main",
             "index": 0
           }
         ]
