@@ -198,3 +198,42 @@ CREATE TABLE user_achievements (
     achieved_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     PRIMARY KEY (user_id, achievement_id)
 );
+
+
+CREATE TABLE IF NOT EXISTS ielts_writing_tasks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    task_type VARCHAR(20) NOT NULL DEFAULT 'Task 2', 
+    essay_type VARCHAR(100),                         
+    title TEXT NOT NULL,                             
+    question TEXT NOT NULL,                          
+    outline JSONB,                                   
+    sample_answers JSONB NOT NULL DEFAULT '[]'::jsonb, 
+    vocabulary JSONB DEFAULT '[]'::jsonb,            
+    source_url TEXT UNIQUE,                          
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_ielts_tasks_task_type ON ielts_writing_tasks(task_type);
+CREATE INDEX IF NOT EXISTS idx_ielts_tasks_essay_type ON ielts_writing_tasks(essay_type);
+CREATE INDEX IF NOT EXISTS idx_ielts_tasks_source_url ON ielts_writing_tasks(source_url);
+
+CREATE TABLE IF NOT EXISTS user_writing_submissions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    task_id UUID REFERENCES ielts_writing_tasks(id) ON DELETE SET NULL, 
+    content TEXT NOT NULL,                            
+    word_count INT DEFAULT 0,                          
+    time_spent_seconds INT DEFAULT 0,                  
+    
+    band_score NUMERIC(3, 1),                          
+    evaluation JSONB,                                 
+    status VARCHAR(20) DEFAULT 'COMPLETED',            
+    
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_submissions_user_id ON user_writing_submissions(user_id);
+CREATE INDEX IF NOT EXISTS idx_submissions_task_id ON user_writing_submissions(task_id);
+
